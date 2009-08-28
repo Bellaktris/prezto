@@ -1,0 +1,8 @@
+#autoload
+
+# Complete words from the history-commands file create with zsh-add-history
+
+local message; zstyle -s ':completion:*:descriptions' format message
+zformat -f message $message d:'frequently used commands'
+
+compadd -X $message -Q -- sudo $(cat "${HISTFILE}-commands" 2>/dev/null)

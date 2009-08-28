@@ -1,0 +1,6 @@
+#autoload
+
+# This is for GNU-like commands which understand the --help option,
+# but which do not otherwise require special completion handling.
+
+! [[ $LBUFFER =~ "/" ]] && [[ ${words[CURRENT][1]} == '-' ]] && _arguments '*:arg: _default' -- &>/dev/null
