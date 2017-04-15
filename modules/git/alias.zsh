@@ -168,8 +168,22 @@ if ! zstyle -t ':prezto:module:git:alias' skip 'yes'; then
   alias ggw='git grep --word-regexp'
 
   # Index (i)
-  alias gia='git add'
-  alias giA='git add --patch'
+  gia() {
+      if [[ $# != 0 ]]; then
+        command git add ${@}
+      else
+        command git add $(command git rev-parse --show-toplevel)
+      fi
+  }
+
+  giA() {
+      if [[ $# != 0 ]]; then
+        command git add --patch ${@}
+      else
+        command git add --patch $(command git rev-parse --show-toplevel)
+      fi
+  }
+
   alias giu='git add --update'
   alias gid='git diff --no-ext-diff --cached'
   alias giD='git diff --no-ext-diff --cached --word-diff'

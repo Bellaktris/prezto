@@ -34,6 +34,12 @@ unsetopt HUP              # Don't kill jobs on shell exit.
 unsetopt CHECK_JOBS       # Don't report on jobs when shell exit.
 
 #
+# Keymaps
+#
+
+bindkey -d
+
+#
 # Termcap
 #
 

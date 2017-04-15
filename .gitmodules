@@ -7,9 +7,6 @@
 [submodule "modules/syntax-highlighting/external"]
 	path = modules/syntax-highlighting/external
 	url = https://github.com/zsh-users/zsh-syntax-highlighting.git
-[submodule "modules/completion/external"]
-	path = modules/completion/external
-	url = https://github.com/zsh-users/zsh-completions.git
 [submodule "modules/prompt/external/powerline"]
 	path = modules/prompt/external/powerline
 	url = https://github.com/davidjrice/prezto_powerline.git
@@ -28,3 +25,21 @@
 [submodule "modules/prompt/external/powerlevel9k"]
 	path = modules/prompt/external/powerlevel9k
 	url = https://github.com/bhilburn/powerlevel9k.git
+[submodule "modules/editor/external/visual-mode"]
+	path = modules/editor/external/visual-mode
+	url = https://github.com/b4b4r07/zsh-vimode-visual.git
+[submodule "modules/tmux/external/tmux-yank"]
+	path = modules/tmux/external/tmux-yank
+	url = https://github.com/tmux-plugins/tmux-yank.git
+[submodule "modules/tmux/external/tmux-mem-cpu-status"]
+	path = modules/tmux/external/tmux-mem-cpu-status
+	url = https://github.com/thewtex/tmux-mem-cpu-load.git
+[submodule "modules/tmux/external/tmux-battery-status"]
+	path = modules/tmux/external/tmux-battery-status
+	url = https://github.com/tmux-plugins/tmux-battery.git
+[submodule "modules/completion/external/autocompletion"]
+	path = modules/completion/external/autocompletion
+	url = https://github.com/Bellaktris/auto-fu.git
+[submodule "modules/completion/external/zsh-completions"]
+	path = modules/completion/external/zsh-completions
+	url = https://github.com/zsh-users/zsh-completions.git

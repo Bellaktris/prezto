@@ -10,22 +10,23 @@ if [[ "$TERM" == 'dumb' ]]; then
   return 1
 fi
 
-#
-# Options
-#
+zmodload zsh/regex
+zmodload zsh/terminfo
+zmodload zsh/complist
 
-# Beep on error in line editor.
-setopt BEEP
+setopt SHORT_LOOPS
 
 #
 # Variables
 #
 
+# Parse key sequences fast
+export KEYTIMEOUT=1
+
 # Treat these characters as part of a word.
 WORDCHARS='*?_-.[]~&;!#$%^(){}<>'
 
 # Use human-friendly identifiers.
-zmodload zsh/terminfo
 typeset -gA key_info
 key_info=(
   'Control'         '\C-'
@@ -34,9 +35,15 @@ key_info=(
   'ControlPageUp'   '\e[5;5~'
   'ControlPageDown' '\e[6;5~'
   'Escape'       '\e'
+  'Tab'          '^I'
+  'Enter'        '^M'
   'Meta'         '\M-'
   'Backspace'    "^?"
-  'Delete'       "^[[3~"
+  'Delete'       '\e[3~'
+  'Up'           '\e[A'
+  'Left'         '\e[D'
+  'Right'        '\e[C'
+  'Down'         '\e[B'
   'F1'           "$terminfo[kf1]"
   'F2'           "$terminfo[kf2]"
   'F3'           "$terminfo[kf3]"
@@ -54,10 +61,6 @@ key_info=(
   'PageUp'       "$terminfo[kpp]"
   'End'          "$terminfo[kend]"
   'PageDown'     "$terminfo[knp]"
-  'Up'           "$terminfo[kcuu1]"
-  'Left'         "$terminfo[kcub1]"
-  'Down'         "$terminfo[kcud1]"
-  'Right'        "$terminfo[kcuf1]"
   'BackTab'      "$terminfo[kcbt]"
 )
 
@@ -80,6 +83,7 @@ zle -N edit-command-line
 #
 # Functions
 #
+
 # Runs bindkey but for all of the keymaps. Running it with no arguments will
 # print out the mappings for all of the keymaps.
 function bindkey-all {
@@ -89,31 +93,34 @@ function bindkey-all {
     bindkey -M "${keymap}" "$@"
   done
 }
-# Exposes information about the Zsh Line Editor via the $editor_info associative
-# array.
+
+# Exposes information about the Zsh Line Editor
+# via the $editor_info associative array.
 function editor-info {
   # Clean up previous $editor_info.
   unset editor_info
   typeset -gA editor_info
 
-  if [[ "$KEYMAP" == 'vicmd' ]]; then
-    zstyle -s ':prezto:module:editor:info:keymap:alternate' format 'REPLY'
+  if [[ "$KEYMAP" =~ "(vicmd|vivis|vivli)" ]]; then
+    zstyle -s ":prezto:module:editor:info:keymap:alternate" format 'REPLY'
     editor_info[keymap]="$REPLY"
   else
-    zstyle -s ':prezto:module:editor:info:keymap:primary' format 'REPLY'
+    zstyle -s ":prezto:module:editor:info:keymap:primary" format 'REPLY'
     editor_info[keymap]="$REPLY"
 
     if [[ "$ZLE_STATE" == *overwrite* ]]; then
-      zstyle -s ':prezto:module:editor:info:keymap:primary:overwrite' format 'REPLY'
+      zstyle -s ":prezto:module:editor:info:keymap:primary:overwrite" format 'REPLY'
       editor_info[overwrite]="$REPLY"
     else
-      zstyle -s ':prezto:module:editor:info:keymap:primary:insert' format 'REPLY'
+      zstyle -s ":prezto:module:editor:info:keymap:primary:insert" format 'REPLY'
       editor_info[overwrite]="$REPLY"
     fi
   fi
 
   unset REPLY
-  zle zle-reset-prompt
+
+  zle reset-prompt
+  zle -R
 }
 zle -N editor-info
 
@@ -199,11 +206,18 @@ zle -N vi-replace
 
 # Expands .... to ../..
 function expand-dot-to-parent-directory-path {
-  if [[ $LBUFFER = *.. ]]; then
-    LBUFFER+='/..'
-  else
-    LBUFFER+='.'
+  ! [[ $LBUFFER -regex-match \
+        "^(\"([^\"]*)\"|'([^']*)'|[^'\"]*)*$" ]] \
+    && LBUFFER+='.' && return
+
+  if [[ $LBUFFER -regex-match "^.*\.\.$" ]]; then
+    [[ $buffer_cur != "" ]] && \
+      BUFFER="$buffer_cur"
+
+    LBUFFER+='/.'
   fi
+
+  zle self-insert
 }
 zle -N expand-dot-to-parent-directory-path
 
@@ -234,8 +248,13 @@ function glob-alias {
 }
 zle -N glob-alias
 
-# Reset to default key bindings.
-bindkey -d
+# Visual mode.
+source "${${(%):-%N}:h}/external/visual-mode/zsh-vimode-visual.zsh"
+
+# Correct v in visual mode
+bindkey -sM vivis 'v' "\e"
+
+set-x-clipboard() {}
 
 #
 # Emacs Key Bindings
@@ -273,33 +292,41 @@ fi
 # Vi Key Bindings
 #
 
-# Edit command in an external editor emacs style (v is used for visual mode)
-bindkey -M vicmd "$key_info[Control]X$key_info[Control]E" edit-command-line
+# Edit command in an external editor.
+bindkey -M vicmd "V" edit-command-line
 
 # Undo/Redo
 bindkey -M vicmd "u" undo
 bindkey -M vicmd "$key_info[Control]R" redo
 
-if (( $+widgets[history-incremental-pattern-search-backward] )); then
-  bindkey -M vicmd "?" history-incremental-pattern-search-backward
-  bindkey -M vicmd "/" history-incremental-pattern-search-forward
-else
+if ! (( $+widgets[history-incremental-pattern-search-backward] )) \
+  || ! zstyle -t ':prezto:module:editor' pattern-search
+then
   bindkey -M vicmd "?" history-incremental-search-backward
   bindkey -M vicmd "/" history-incremental-search-forward
+else
+  bindkey -M vicmd "?" history-incremental-pattern-search-backward
+  bindkey -M vicmd "/" history-incremental-pattern-search-forward
 fi
 
 #
 # Emacs and Vi Key Bindings
 #
 
-# Unbound keys in vicmd and viins mode will cause really odd things to happen
-# such as the casing of all the characters you have typed changing or other
-# undefined things. In emacs mode they just insert a tilde, but bind these keys
-# in the main keymap to a noop op so if there is no keybind in the users mode
+# Unbound  keys in  vicmd and  viins mode  will cause
+# really odd things  to happen such as  the casing of
+# all the characters you have typed changing or other
+# undefined things. In emacs  mode they just insert a
+# tilde, but bind these keys  in the main keymap to a
+# noop op so if there is no keybind in the users mode
 # it will fall back and do nothing.
+
 function _prezto-zle-noop {  ; }
+
 zle -N _prezto-zle-noop
+
 local -a unbound_keys
+
 unbound_keys=(
   "${key_info[F1]}"
   "${key_info[F2]}"
@@ -318,10 +345,12 @@ unbound_keys=(
   "${key_info[ControlPageUp]}"
   "${key_info[ControlPageDown]}"
 )
+
 for keymap in $unbound_keys; do
   bindkey -M viins "${keymap}" _prezto-zle-noop
   bindkey -M vicmd "${keymap}" _prezto-zle-noop
 done
+
 # Ctrl + Left and Ctrl + Right bindings to forward/backward word
 for keymap in viins vicmd; do
   for key in "${(s: :)key_info[ControlLeft]}"
@@ -340,6 +369,12 @@ for keymap in 'emacs' 'viins'; do
 
   bindkey -M "$keymap" "$key_info[Left]" backward-char
   bindkey -M "$keymap" "$key_info[Right]" forward-char
+
+  # Space+AnyModifier support
+  bindkey -sM "$keymap" "^@" " "
+  bindkey -sM "$keymap" "\e[32;2u" " "
+  bindkey -sM "$keymap" "\e[32;5u" " "
+  bindkey -sM "$keymap" "\e[32;6u" " "
 
   # Expand history on space.
   bindkey -M "$keymap" ' ' magic-space
@@ -370,6 +405,10 @@ for keymap in 'emacs' 'viins'; do
     bindkey -M "$keymap" "." expand-dot-to-parent-directory-path
   fi
 
+  # Make <c-z><c-z> send current job to background
+  zstyle -t ':prezto:module:editor' double-ctrl-z 'yes' \
+    &&  bindkey -M "$keymap" "$key_info[Control]Z" double-ctrl-z
+
   # Display an indicator when completing.
   bindkey -M "$keymap" "$key_info[Control]I" \
     expand-or-complete-with-indicator
@@ -384,10 +423,47 @@ done
 # Delete key deletes character in vimcmd cmd mode instead of weird default functionality
 bindkey -M vicmd "$key_info[Delete]" delete-char
 
+
+#
+# Fixes
+#
+
 # Do not expand .... to ../.. during incremental search.
 if zstyle -t ':prezto:module:editor' dot-expansion; then
   bindkey -M isearch . self-insert 2> /dev/null
 fi
+
+# Accept search with Enter
+bindkey -M isearch "$key_info[Enter]" accept-search
+
+# Make search more consistent with classic vim
+function zle-isearch-exit() {
+    [[ -n "$LASTSEARCH" ]] || return 0
+
+    local left=$(( $CURSOR + 1))
+    local right=$(( $left + $#LASTSEARCH - 1))
+
+    [[ "$LASTSEARCH" != "$BUFFER[$left, $right]" ]] \
+      && (( CURSOR -= $#LASTSEARCH )); return 0
+}
+
+zle -N zle-isearch-exit
+
+# Use escape to leave menuselecting mode
+change-to-vicmd() { zle -K vicmd; (( --CURSOR )) } && zle -N change-to-vicmd
+bindkey -M menuselect "$key_info[Escape]" change-to-vicmd
+
+
+#
+# Miscelaneous
+#
+
+
+function double-ctrl-z ()
+  { [[ $#BUFFER -ne 0 ]] && zle push-input || { bg; zle redisplay; } }
+
+zle -N double-ctrl-z
+
 
 #
 # Layout
@@ -395,9 +471,9 @@ fi
 
 # Set the key layout.
 zstyle -s ':prezto:module:editor' key-bindings 'key_bindings'
-if [[ "$key_bindings" == (emacs|) ]]; then
+if [[ "$key_bindings" == emacs ]]; then
   bindkey -e
-elif [[ "$key_bindings" == vi ]]; then
+elif [[ "$key_bindings" == (vi|) ]]; then
   bindkey -v
 else
   print "prezto: editor: invalid key bindings: $key_bindings" >&2

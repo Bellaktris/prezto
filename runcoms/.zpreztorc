@@ -1,0 +1,56 @@
+zstyle ':prezto:load' pmodule \
+  'fbterm'                    \
+  'tmux'                      \
+  'environment'               \
+  'terminal'                  \
+  'history'                   \
+  'directory'                 \
+  'spectrum'                  \
+  'utility'                   \
+  'ssh'                       \
+  'archive'                   \
+  'git'                       \
+  'syntax-highlighting'       \
+  'editor'                    \
+  'completion'                \
+  'fzf'                       \
+  'prompt'
+
+zstyle ':prezto:module:terminal' time-report 'yes'
+
+zstyle ':prezto:module:editor' dot-expansion 'yes'
+zstyle ':prezto:module:editor' key-bindings  'vi'
+zstyle ':prezto:module:editor' double-ctrl-z 'yes'
+
+zstyle ':prezto:module:git:log:context' format 'medium'
+zstyle ':prezto:module:git:status:ignore' submodules 'all'
+
+zstyle ':prezto:module:ssh:load' identities 'all'
+
+zstyle ':prezto:module:fbterm' backgrounds "$HOME/.fbterm"
+
+zstyle ':prezto:module:tmux:auto-start' local  'yes'
+zstyle ':prezto:module:tmux:auto-start' remote 'yes'
+zstyle ':prezto:module:tmux' fortune-message 'first-time'
+
+zstyle ':prezto:module:completion' autocompletion 'yes'
+
+zstyle ':prezto:module:utility' safe-ops 'yes'
+
+zstyle ':prezto:module:prompt' theme 'sorin'
+
+zstyle ':prezto:module:editor' ps-context 'yes'
+
+zstyle ':prezto:module:prompt' pwd-length 'short'
+
+zstyle ':prezto:*:*' color 'yes'
+
+zstyle ':prezto:load' zmodule 'attr' 'stat' 'sched'
+
+zstyle ':prezto:module:syntax-highlighting' highlighters \
+  'main' 'brackets' 'pattern' 'line' 'root'
+
+zstyle ':prezto:module:syntax-highlighting' styles \
+  'builtin' 'fg=cyan'   'command' 'fg=cyan'   'function' 'fg=cyan'
+
+# vim: filetype=zsh: foldmarker={{{,}}}: foldenable

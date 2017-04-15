@@ -14,4 +14,6 @@ fi
 pmodload 'helper'
 
 # Source module files.
-source "${0:h}/alias.zsh"
+alias git='noglob git'
+alias hg='noglob hg'
+source "${${(%):-%N}:h}/alias.zsh"

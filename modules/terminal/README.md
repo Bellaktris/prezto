@@ -6,6 +6,13 @@ Sets terminal window and tab titles.
 Settings
 --------
 
+### Resources usage reports
+
+For long-running commands  it is useful to  know how much memory
+they used and how long they run. You can get both with
+
+    zstyle -t ':prezto:module:terminal' time-report 'yes'
+
 ### Auto-Title
 
 To auto set the terminal window and tab titles with the current command or

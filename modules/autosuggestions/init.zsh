@@ -9,7 +9,7 @@
 pmodload 'editor'
 
 # Source module files.
-source "${0:h}/external/zsh-autosuggestions.zsh" || return 1
+source "${${(%):-%N}:h}/external/zsh-autosuggestions.zsh" || return 1
 
 #
 # Highlighting

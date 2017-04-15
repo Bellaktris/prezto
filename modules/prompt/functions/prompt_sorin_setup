@@ -55,7 +55,11 @@ function prompt_sorin_git_info {
 
 function prompt_sorin_async_git {
   cd -q "$1"
-  if (( $+functions[git-info] )); then
+  if (( $+functions[_dotfiles_scm_info] )); then
+    typeset -g git_info
+    git_info=$(_dotfiles_scm_info)
+    print ${${git_info//\(}//\)}
+  elif (( $+functions[git-info] )); then
     git-info
     print ${git_info[status]}
   fi
@@ -81,12 +85,12 @@ function prompt_sorin_precmd {
     fi
   fi
 
-  
+
   # Run python info (this should be fast and not require any async)
   if (( $+functions[python-info] )); then
     python-info
   fi
-  
+
   # Compute slow commands in the background.
   async_job async_sorin_git prompt_sorin_async_git "$PWD"
 }
@@ -106,7 +110,7 @@ function prompt_sorin_setup {
   add-zsh-hook precmd prompt_sorin_precmd
 
   # Set editor-info parameters.
-  zstyle ':prezto:module:editor:info:completing' format '%B%F{7}...%f%b'
+  # zstyle ':prezto:module:editor:info:completing' format '%B%F{7}...%f%b'
   zstyle ':prezto:module:editor:info:keymap:primary' format ' %B%F{1}❯%F{3}❯%F{2}❯%f%b'
   zstyle ':prezto:module:editor:info:keymap:primary:overwrite' format ' %F{3}♺%f'
   zstyle ':prezto:module:editor:info:keymap:alternate' format ' %B%F{2}❮%F{3}❮%F{1}❮%f%b'
@@ -147,10 +151,10 @@ function prompt_sorin_setup {
   _prompt_sorin_pwd=''
 
   # Define prompts.
-  PROMPT='${SSH_TTY:+"%F{9}%n%f%F{7}@%f%F{3}%m%f "}%F{4}${_prompt_sorin_pwd}%(!. %B%F{1}#%f%b.)${editor_info[keymap]} '
+  PROMPT='${SSH_TTY:+"%F{9}%n%f%F{7}@%f%F{3}%m%f "}%F{3}${_prompt_sorin_pwd}%(!. %B%F{1}#%f%b.)${editor_info[keymap]} '
   RPROMPT='$python_info[virtualenv]${editor_info[overwrite]}%(?:: %F{1}'
   RPROMPT+=${show_return}
-  RPROMPT+='%f)${VIM:+" %B%F{6}V%f%b"}${_prompt_sorin_git}'
+  RPROMPT+='%f)${VIM:+" %B%F{6}V%f%b"} ${_prompt_sorin_git}'
   SPROMPT='zsh: correct %F{1}%R%f to %F{2}%r%f [nyae]? '
 }
 

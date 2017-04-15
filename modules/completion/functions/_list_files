@@ -1,0 +1,68 @@
+#autoload
+
+local stat f elt what dir
+local -a stylevals
+integer ok
+listfiles=()
+listopts=()
+zstyle -a ":completion:${curcontext}:" file-list stylevals || return 1
+case $WIDGETSTYLE in
+	(*complete*) what=insert  ;;
+	(*) what=list  ;;
+esac
+for elt in $stylevals
+do
+	case $elt in
+		(*($what|all|true|1|yes)*=<->) (( ${(P)#1} <= ${elt##*=} )) && (( ok = 1 ))
+			break ;;
+		(*($what|all|true|1|yes)[^=]#) (( ok = 1 ))
+			break ;;
+	esac
+done
+(( ok )) || return 1
+zmodload -F zsh/stat b:zstat 2> /dev/null || return 1
+dir=${2:+$2/}
+dir=${(Q)dir}
+
+for f in ${(PQ)1}
+do
+	if [[ ! -e "$dir$f" ]]
+	then
+		listfiles+=("$dir$f")
+		continue
+	fi
+	zstat -s -H stat -F "%b %e %H:%M" - "$dir$f" > /dev/null 2>&1
+
+	size=$(numfmt --to=si --suffix=B --format="%f" $stat[size]);
+	mtime=$stat[mtime]; mtime=(${(s: :)mtime});
+	mtime="${(l:2:)mtime[2]} ${(C)mtime[1]} $mtime[3]";
+	attrs="│ ${(l:10:)stat[mode]}  ${(l:6:)size}   $mtime"
+
+	if [[ $dir[1] != '/' ]]; then
+		file=$(cd "$(pwd)/$dir" 2>/dev/null; ls --color=always -d -A "$f" 2>/dev/null);
+	else
+		file=$(cd "$dir" 2>/dev/null; ls --color=always -d -A "$f" 2>/dev/null);
+	fi
+
+	if [[ "$file" != '' ]]; then
+		subarray=(${(s::)file});
+		subarray=(${(M)subarray:#*38;5*})
+		file="$subarray[-1]";
+
+		file=(${(s:38;5;:)file});
+		file="\e[38;5;$file[-1]"
+
+		len="${#file}"
+		file="${(r:((30 + ${len} - ${#f})):)file}"
+    [[ ${len} -ge 40 ]] && file="${file[1, -5]}... "
+
+		string=$(echo -n "$file\e[39m$attrs")
+
+		listfiles+=("$string")
+	fi
+done
+
+
+(( ${#listfiles} )) && listopts=(-d listfiles -l -o)
+
+return 0

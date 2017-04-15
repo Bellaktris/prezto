@@ -54,4 +54,4 @@ function dkmd {
 }
 
 # Source module files.
-source "${0:h}/alias.zsh"
+source "${${(%):-%N}:h}/alias.zsh"

@@ -24,8 +24,8 @@ zstyle -s ':prezto:module:pacman' frontend '_pacman_frontend'
 if (( $+commands[$_pacman_frontend] )); then
   alias pacman="$_pacman_frontend"
 
-  if [[ -s "${0:h}/${_pacman_frontend}.zsh" ]]; then
-    source "${0:h}/${_pacman_frontend}.zsh"
+  if [[ -s "${${(%):-%N}:h}/${_pacman_frontend}.zsh" ]]; then
+    source "${${(%):-%N}:h}/${_pacman_frontend}.zsh"
   fi
 else
   _pacman_frontend='pacman'

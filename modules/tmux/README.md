@@ -1,10 +1,12 @@
 Tmux
 ====
 
-Defines [tmux][1] aliases and provides for auto launching it at start-up.
+Defines [tmux][1] aliases, provides for auto launching and decorate status line.
 
 Settings
 --------
+
+Load this module straight before the environment.
 
 ### Auto-Start
 
@@ -52,6 +54,12 @@ zstyle ':prezto:module:tmux:iterm' integrate 'yes'
 ```
 
 Read [iTerm2 and tmux Integration][7] for more information.
+
+#### Welcome message
+
+Use the following zstyle to add fortune welcome messages when new buffer starts.
+
+    zstyle ':prezto:module:tmux' fortune-message ['first-time' | 'always']
 
 Aliases
 -------

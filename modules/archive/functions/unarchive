@@ -1,3 +1,5 @@
+#!/usr/bin/env zsh
+
 #
 # Extracts the contents of archives.
 #
@@ -71,6 +73,9 @@ while (( $# > 0 )); do
       cd ../data; tar xvf ../data.tar.*
       cd ..; rm control.tar.* data.tar.* debian-binary
       cd ..
+    ;;
+    (*.rpm)
+      tar xvf "${file_path}"
     ;;
     (*)
       print "$0: cannot extract: $1" >&2
