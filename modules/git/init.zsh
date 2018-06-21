@@ -16,4 +16,9 @@ pmodload 'helper'
 # Source module files.
 alias git='noglob git'
 alias hg='noglob hg'
+
+hg-diff () {
+  hg diff --color=always --git $@ | diff-so-fancy | less -FR
+}
+
 source "${${(%):-%N}:h}/alias.zsh"

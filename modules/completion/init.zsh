@@ -233,21 +233,20 @@ then
   zstyle ':auto-fu:var' disable magic-space
 
   zstyle ':auto-fu:var' autoable-function/skiplines \
-    '([[:print:]]##[[:space:]]##|(#s)[[:space:]]#)(blaze|blaze64|buck|g4d|g4) ?*' \
-    '([[:print:]]##[[:space:]]##|(#s)[[:space:]]#)(aptitude|apt|apt-get|yum|hg|brew|pip|pip3) [[:print:]]# ?*' \
+    '([[:print:]]##[[:space:]]##|(#s)[[:space:]]#)(blaze|blaze64|buck|g4d|g4|tw|clowder) ?*' \
+    '([[:print:]]##[[:space:]]##|(#s)[[:space:]]#)(aptitude|apt|apt-get|yum|brew|pip|pip3|hg) [[:print:]]# ?*' \
     '([[:print:]]##[[:space:]]##|(#s)[[:space:]]#)(touch|mkdir|npm|scp|make|yarn) ?*'
 
   zstyle ':auto-fu:var' autoable-function/skipwords \
     '/bns/*' '/cns/*' '/cfs/*' '/bigtable/*' '/bigfile/*' '/namespace/*' '/placer/*' '/home/' '/mnt/vol/*'
 
-  # it a hack, of course...
   source "${${(%):-%N}:h}/external/autocompletion/auto-fu" && auto-fu-install
 
+  bindkey -M "afu" "$key_info[BackTab]" reverse-menu-complete
+
+  # it a hack, of course...
   bindkey -M afu "$key_info[Right]" afu-cursor-right
   bindkey -M afu  "$key_info[Left]" afu-cursor-left
-
-  # bindkey -M afu   "$key_info[Up]" afu-history-up
-  # bindkey -M afu "$key_info[Down]" afu-history-down
 
   afu-cursor-left()  { (( CURSOR -= 1 )) } && zle -N afu-cursor-left
   afu-cursor-right() { (( CURSOR += 1 )) } && zle -N afu-cursor-right

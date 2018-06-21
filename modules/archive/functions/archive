@@ -8,10 +8,10 @@
 
 
 (( $+commands[pbzip2] )) && local _bzip2_bin='pbzip2' \
-  || { echo "Install pbzip2"; local _bzip2_bin='bzip2' }
+  || { echo "Warning: Install pbzip2"; local _bzip2_bin='bzip2' }
 
 (( $+commands[pigz] )) && local _gzip_bin='pigz' \
-  || { echo "Install pigz"; local _gzip_bin='gzip' }
+  || { echo "Warning: Install pigz"; local _gzip_bin='gzip' }
 
 case ${@[-1]} in
 

@@ -14,7 +14,9 @@ fi
 # Sets command time/memory reports for long-running commands
 zstyle -t ':prezto:module:terminal' time-report 'yes' && \
   { TIME="\033[36mtime:\033[0m \033[33m%*E\033[0m"
-    MEMORY="\033[36mmemory:\033[0m \033[33m%M MB\033[0m\n"
+    [[ $OSTYPE == darwin* ]]                                    \
+      && MEMORY="\033[36mmemory:\033[0m \033[33m%M Kb\033[0m\n" \
+      || MEMORY="\033[36mmemory:\033[0m \033[33m%M Mb\033[0m\n"
 
     REPORTTIME=10; TIMEFMT=$(echo "\n  $TIME\n$MEMORY ") }
 
