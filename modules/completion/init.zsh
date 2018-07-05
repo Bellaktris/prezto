@@ -233,7 +233,7 @@ then
   zstyle ':auto-fu:var' disable magic-space
 
   zstyle ':auto-fu:var' autoable-function/skiplines \
-    '([[:print:]]##[[:space:]]##|(#s)[[:space:]]#)(blaze|blaze64|buck|g4d|g4|tw|clowder) ?*' \
+    '([[:print:]]##[[:space:]]##|(#s)[[:space:]]#)(blaze|blaze64|buck|g4d|g4|tw|clowder|buck) ?*' \
     '([[:print:]]##[[:space:]]##|(#s)[[:space:]]#)(aptitude|apt|apt-get|yum|brew|pip|pip3|hg) [[:print:]]# ?*' \
     '([[:print:]]##[[:space:]]##|(#s)[[:space:]]#)(touch|mkdir|npm|scp|make|yarn) ?*'
 
