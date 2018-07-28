@@ -13,7 +13,7 @@
   export FZF_DEFAULT_COMMAND="rg --files --hidden --no-messages "
 
 export FZF_DEFAULT_OPTS="-i -m -1 --ansi --algo=v1 --bind change:top --cycle --color=bg+:-1\
-  --inline-info --tiebreak=begin,length,index --bind=tab:toggle-up,btab:toggle-down"
+  --inline-info --tiebreak=begin,length,index --bind=tab:toggle-up,btab:toggle-down,esc:cancel"
 
 export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND ./"
 

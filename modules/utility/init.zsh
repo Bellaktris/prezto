@@ -163,10 +163,13 @@ alias make="make -j10"
   }
 
 # Editor
-alias :q='exit'  && alias :wq='exit'
-alias vim='nvim' && alias  vi='nvim'
+alias :wq='exit'
+alias :q='exit'
 
-command -v vim.basic &>/dev/null
+command -v nvim &>/dev/null && {
+  alias vim='nvim -p'
+  alias  vi='nvim -p'
+}
 
 nvim () {
   # if [[ -S /tmp/nvimsocket ]] && (( $+commands[nvr] ));
@@ -195,7 +198,13 @@ nvim () {
     if ! [[ ${@: -1} =~ ^(.*\\.vpy|.*\\.py)$ ]]; then
       command mpv ${mpv_opts} ${@}
     else
-      vspipe ${@: -1} --y4m - | command mpv ${mpv_opts} ${@:1:-1} -
+      set -- "${@}" ${@#*=}
+
+      zparseopts -a vs_args -D - \
+        o: a: -arg: -start: -end:
+
+      vspipe ${vs_args[@]} ${@: -1} --y4m - \
+          | command mpv ${mpv_opts} ${@:1:-1} -
     fi
   }
 
