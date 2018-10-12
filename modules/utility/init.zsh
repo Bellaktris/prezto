@@ -198,8 +198,7 @@ nvim () {
     if ! [[ ${@: -1} =~ ^(.*\\.vpy|.*\\.py)$ ]]; then
       command mpv ${mpv_opts} ${@}
     else
-      # set -- ${@#*=}
-
+      set -- ${@/=/}
       zparseopts -a vs_args -D - \
         o: a: -arg+: -start: -end:
 
