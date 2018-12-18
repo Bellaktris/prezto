@@ -14,10 +14,6 @@ pmodload 'helper' 'spectrum'
 setopt CORRECT
 
 
-# Perl regular expressions
-setopt RE_MATCH_PCRE
-
-
 #
 # Aliases
 #
@@ -198,7 +194,7 @@ nvim () {
     if ! [[ ${@: -1} =~ ^(.*\\.vpy|.*\\.py)$ ]]; then
       command mpv ${mpv_opts} ${@}
     else
-      set -- ${@/=/}
+      # IFS="= "; set -- ${=@}
       zparseopts -a vs_args -D - \
         o: a: -arg+: -start: -end:
 
@@ -312,6 +308,7 @@ function noremoteglob {
     ( *:* ) argo+=( ${arg}  ) ;; # remote, noglob
     (  *  ) argo+=( ${~arg} ) ;; # default, glob
   esac; done
+
   command $cmd "${(@)argo}"
 }
 
@@ -348,24 +345,4 @@ function find-exec {
 # Displays user owned processes status.
 function psu {
   ps -U "${1:-$LOGNAME}" -o 'pid,%cpu,%mem,command' "${(@)argv[2,-1]}"
-}
-
-# Enables globbing selectively on path arguments.
-# Globbing is enabled on local paths (starting in '/' and './') and disabled
-# on remote paths (containing ':' but not starting in '/' and './'). This is
-# useful for programs that have their own globbing for remote paths.
-# Currently, this is used by default for 'rsync' and 'scp'.
-# Example:
-#   - Local: '*.txt', './foo:2017*.txt', '/var/*:log.txt'
-#   - Remote: user@localhost:foo/
-function noremoteglob {
-  local -a argo
-  local cmd="$1"
-  for arg in ${argv:2}; do case $arg in
-    ( ./* ) argo+=( ${~arg} ) ;; # local relative, glob
-    (  /* ) argo+=( ${~arg} ) ;; # local absolute, glob
-    ( *:* ) argo+=( ${arg}  ) ;; # remote, noglob
-    (  *  ) argo+=( ${~arg} ) ;; # default, glob
-  esac; done
-  command $cmd "${(@)argo}"
 }

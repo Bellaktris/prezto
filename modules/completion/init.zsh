@@ -87,9 +87,7 @@ zstyle ':completion:*' completer \
 
 zstyle -e ':completion:*' completer \
  'reply=(_oldlist _complete _gnu_arg_complete _list _approximate);
-  (( $CURRENT <= 1 )) && reply=();
-  (( $CURRENT <= 2 )) && [[ "${(j: :)words[1, $CURRENT]}" =~ "^(sudo |)[A-Za-z0-9_~./\+\-]+$" ]] \
-    && reply=(_oldlist _command_complete _complete _list _approximate);'
+  (( $CURRENT <= 2 )) && reply=(_oldlist _command_complete _complete _list _approximate)'
 
 zstyle ':completion:*:-command-:*' tag-order   \
   "suffix-aliases aliases" "functions:-non-ignored" \
@@ -242,8 +240,6 @@ then
 
   source "${${(%):-%N}:h}/external/autocompletion/auto-fu" && auto-fu-install
 
-  bindkey -M "afu" "$key_info[BackTab]" reverse-menu-complete
-
   # it a hack, of course...
   bindkey -M afu "$key_info[Right]" afu-cursor-right
   bindkey -M afu  "$key_info[Left]" afu-cursor-left
@@ -252,6 +248,8 @@ then
   afu-cursor-right() { (( CURSOR += 1 )) } && zle -N afu-cursor-right
 
   zle-line-init() { afu_in_p=0; auto-fu-init; } && zle -N zle-line-init
+
+  bindkey -M afu "$terminfo[kcbt]" reverse-menu-complete
 fi  # zstyle -t ':prezto:module:completion' autocompletion 'yes'
 
 

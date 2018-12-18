@@ -66,5 +66,7 @@
   zbuild "${SYNTAX_MOD}/zsh-syntax-highlighting.zsh"
   for file in "${SYNTAX_MOD}"/highlighters/**^test-data/*.zsh; do zbuild "${file}"; done
 
+  for file in ${^fpath}/_^(*.zwc)(.N); do zbuild "${file}"; done
+
   rm -f ${${ZDOTDIR:-${HOME}}:h}/**/*.zwc.old && rm -f ${${ZDOTDIR:-${HOME}}:h}/**/.*.zwc.old
 } &>/dev/null &!

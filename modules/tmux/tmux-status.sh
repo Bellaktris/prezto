@@ -15,10 +15,10 @@ local plugins="${${(%):-%N}:h}/external"
   icon=${${icon//🌖 /⇓}//🌗 /⇓}
   icon=${${icon//🌒 /⇓}//🌕 /⇓}
 
-  # if [[ $TERM_PROGRAM != iTerm.app ]]
-  #   then
+  if [[ $TERM_PROGRAM != iTerm.app ]]
+    then
       icon=${${icon[1]//❇/⚡}//🔋/}
-  # fi
+  fi
 
   local percentage="$(sh -c ${dir}/battery_percentage.sh 2>/dev/null)"
   [[ -n $percentage ]] && tmuxstatus+=( "${icon}${percentage}" ) }
