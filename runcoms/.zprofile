@@ -104,6 +104,12 @@ if (( $#commands[(i)lesspipe(|.sh)] )); then
   export LESSOPEN="| /usr/bin/env $commands[(i)lesspipe(|.sh)] %s 2>&-"
 fi
 
+
+# Intel MKL
+[[ $(getconf LONG_BIT) == "64" ]] \
+  && source /opt/intel/bin/compilervars.sh intel64 2>/dev/null
+
+
 # Source machine local environment
 source "${${(%):-%N}:h}"/.zprofile-local 2>/dev/null
 # vim: filetype=zsh: foldmarker={{{,}}}: foldenable

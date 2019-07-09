@@ -18,9 +18,10 @@ zstyle ':prezto:load' pmodule \
 
 zstyle ':prezto:module:terminal' time-report 'yes'
 
+zstyle ':prezto:module:editor' double-ctrl-z 'yes'
+
 zstyle ':prezto:module:editor' dot-expansion 'no'
 zstyle ':prezto:module:editor' key-bindings  'vi'
-zstyle ':prezto:module:editor' double-ctrl-z 'yes'
 
 zstyle ':prezto:module:git:log:context' format 'medium'
 zstyle ':prezto:module:git:status:ignore' submodules 'all'

@@ -87,7 +87,7 @@ zstyle ':completion:*' completer \
 
 zstyle -e ':completion:*' completer \
  'reply=(_oldlist _complete _gnu_arg_complete _list _approximate);
-  (( $CURRENT <= 2 )) && reply=(_oldlist _command_complete _complete _list _approximate)'
+  (( $CURRENT <= 1 )) && reply=(_oldlist _command_complete _complete _list _approximate)'
 
 zstyle ':completion:*:-command-:*' tag-order   \
   "suffix-aliases aliases" "functions:-non-ignored" \

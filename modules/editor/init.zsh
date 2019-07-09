@@ -457,10 +457,19 @@ function zle-isearch-exit() {
 
 zle -N zle-isearch-exit
 
+function vi-add-next2() {
+    zle vi-add-next
+    [[ "$CURSOR" == "${#BUFFER}" ]] \
+      && BUFFER="$BUFFER " \
+      && CURSOR=$(($CURSOR + 1))
+}
+
+zle -N vi-add-next2
+bindkey -M vicmd "a" vi-add-next2
+
 # Use escape to leave menuselecting mode
 change-to-vicmd() { zle -K vicmd; (( --CURSOR )) } && zle -N change-to-vicmd
 bindkey -M menuselect "$key_info[Escape]" change-to-vicmd
-
 
 #
 # Miscelaneous

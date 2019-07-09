@@ -119,7 +119,8 @@ alias lc='lt -c'         # Lists sorted by date, most recent last, shows change 
 alias lu='lt -u'         # Lists sorted by date, most recent last, shows access time.
 alias sl='ls'            # I often screw this up.
 
-alias ls='ls -a -h --color=auto'  # This is how I use ls usually
+# This is how I use ls usually
+alias ls='ls -a -h'
 
 # Grep
 if zstyle -t ':prezto:module:utility:grep' color; then

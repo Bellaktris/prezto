@@ -10,7 +10,7 @@
   export FZF_DEFAULT_COMMAND="ag --files --hidden --no-messages "
 
 (( $+commands[rg] )) &&\
-  export FZF_DEFAULT_COMMAND="rg --files --hidden --no-messages "
+  export FZF_DEFAULT_COMMAND="rg -L --files --hidden --no-messages "
 
 export FZF_DEFAULT_OPTS="-i -m -1 --ansi --algo=v1 --bind change:top --cycle --color=bg+:-1\
   --inline-info --tiebreak=begin,length,index --bind=tab:toggle-up,btab:toggle-down,esc:cancel"

@@ -3,7 +3,7 @@ tmux set visual-activity off
 tmux setw monitor-activity off
 
 tmux set mouse on
-tmux set -s escape-time 0
+tmux set -g escape-time 0
 
 tmux set focus-events on
 tmux set bell-action none
@@ -14,6 +14,8 @@ tmux set -a terminal-overrides ",xterm:Tc"
 tmux set -a terminal-overrides ",xterm-256color:Tc"
 
 tmux set destroy-unattached off
+
+tmux set -g history-limit 5000
 
 tmux set default-shell $SHELL
 
