@@ -235,8 +235,7 @@ then
     '([[:print:]]##[[:space:]]##|(#s)[[:space:]]#)(aptitude|apt|apt-get|yum|brew|pip|pip3|hg) [[:print:]]# ?*' \
     '([[:print:]]##[[:space:]]##|(#s)[[:space:]]#)(touch|mkdir|npm|scp|make|yarn) ?*'
 
-  zstyle ':auto-fu:var' autoable-function/skipwords \
-    '/bns/*' '/cns/*' '/cfs/*' '/bigtable/*' '/bigfile/*' '/namespace/*' '/placer/*' '/home/' '/mnt/vol/*'
+  zstyle ':auto-fu:var' autoable-function/skipwords '/home/' '/mnt/vol/*'
 
   source "${${(%):-%N}:h}/external/autocompletion/auto-fu" && auto-fu-install
 

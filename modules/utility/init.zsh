@@ -13,10 +13,48 @@ pmodload 'helper' 'spectrum'
 # Correct commands.
 setopt CORRECT
 
+#
+# Source control helpers
+#
+
+is_git_repo() {
+  local root="$(pwd -P)"
+
+  while [[ $root && ! -d $root/.git ]]
+  do; root="${root%/*}"; done
+
+  [[ $root ]] && return 0 || return 1
+}
+
+is_hg_repo() {
+  local root="$(pwd -P)"
+
+  while [[ $root && ! -d $root/.hg ]]
+  do; root="${root%/*}"; done
+
+  [[ $root ]] && return 0 || return 1
+}
+
 
 #
 # Aliases
 #
+
+function rm cp mv () {
+    if is_git_repo; then
+        git $0 "$@" &>/dev/null || command $0 "$@"
+    else
+      if is_hg_repo; then
+        hg $0 "$@" &>/dev/null || command $0 "$@"
+      else
+        if zstyle -T ':prezto:module:utility' safe-ops; then
+          command $0 -i "$@"
+        else
+          command $0 "$@"
+        fi
+      fi
+    fi
+}
 
 # Disable correction.
 alias ack='nocorrect ack'
@@ -33,6 +71,12 @@ alias mkdir='nocorrect mkdir'
 alias mv='nocorrect mv'
 alias mysql='nocorrect mysql'
 alias rm='nocorrect rm'
+
+(( $+commands[rg] )) \
+  && alias rg='nocorrect rg --smart-case'
+
+(( $+commands[ag] )) \
+  && alias rg='nocorrect ag --smart-case'
 
 # Disable globbing.
 alias wget='noglob wget'
@@ -64,15 +108,12 @@ alias sa='alias | grep -i'
 alias type='type -a'
 
 # Safe ops. Ask the user before doing anything destructive.
-alias rmi="${aliases[rm]:-rm} -i"
-alias mvi="${aliases[mv]:-mv} -i"
-alias cpi="${aliases[cp]:-cp} -i"
+alias rmi="nocorrect command rm -i"
+alias mvi="nocorrect command mv -i"
+alias cpi="nocorrect command cp -i"
 alias lni="${aliases[ln]:-ln} -i"
 
 if zstyle -T ':prezto:module:utility' safe-ops; then
-  alias rm='rmi'
-  alias mv='mvi'
-  alias cp='cpi'
   alias ln='lni'
 fi
 
@@ -142,22 +183,22 @@ alias clang++="clang++ $CXX_OPTIONS"
 # Make
 alias make="make -j10"
 
-(( $+commands[cmake] )) && \
-  cmake() {
-    local cmake_args="-DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=ON"
-
-    if [[ -f $(pwd)/CMakeCache.txt ]]; then
-      command cmake ${(s: :)cmake_args} $*
-    else
-      if [[ "$@" -regex-match " -G " ]] \
-        || ! (( $+commands[ninja] ))
-      then
-        command cmake ${(s: :)cmake_args} $*
-      else
-        command cmake ${(s: :)cmake_args} -G Ninja $*
-      fi
-    fi
-  }
+# (( $+commands[cmake] )) && \
+#   cmake() {
+#     local cmake_args="-DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=ON"
+#
+#     if [[ -f $(pwd)/CMakeCache.txt ]]; then
+#       command cmake ${(s: :)cmake_args} $*
+#     else
+#       if [[ "$@" -regex-match " -G " ]] \
+#         || ! (( $+commands[ninja] ))
+#       then
+#         command cmake ${(s: :)cmake_args} $*
+#       else
+#         command cmake ${(s: :)cmake_args} -G Ninja $*
+#       fi
+#     fi
+#   }
 
 # Editor
 alias :wq='exit'
@@ -199,10 +240,14 @@ nvim () {
       zparseopts -a vs_args -D - \
         o: a: -arg+: -start: -end:
 
-      vspipe ${vs_args[@]} ${@: -1} --y4m - \
-          | command mpv ${mpv_opts} ${@:1:-1} -
+      vspipe "${vs_args[@]#=}" "${@: -1}" --y4m - \
+        | command mpv "${mpv_opts[@]}" "${@:1:-1}" -
     fi
   }
+
+hstack-mpv () {
+  command mpv --lavfi-complex="[vid1][vid2]hstack=inputs=2[vo]" $1 --external-files="$2" --mute
+}
 
 # Grc
 if zstyle -t ':prezto:module:utility:grc' color \

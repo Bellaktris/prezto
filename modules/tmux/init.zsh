@@ -60,7 +60,12 @@ if [[ -z "$TMUX" && -z "$INSIDE_EMACS" && -z "$VIM" \
   source "${${(%):-%N}:h}/tmux-options.zsh" 2>/dev/null
   # Load plugins
   local plug_dir="${${(%):-%N}:h}/external"
-  /usr/bin/env sh -c "${plug_dir}/tmux-yank/yank.tmux" &>/dev/null
+
+  {
+    pushd ${plug_dir}/tmux-yank
+    source "./yank.tmux" &>/dev/null
+    popd
+  }
 
   # Attach to the starting session or to the last session used.
   exec tmux $_tmux_iterm_integration attach-session && exit 0;
@@ -73,12 +78,20 @@ fi
 alias tmuxl='tmux list-sessions'
 alias tmuxa="tmux $_tmux_iterm_integration new-session -A"
 
+functions ssh-like() {
+  tmux set -q "@is_ssh_like_$TMUX_PANE" "1"
+  $@
+  tmux set -q "@is_ssh_like_$TMUX_PANE" ""
+}
+
 function tmuxt() {
   local query=(); [[ $# > 0 ]] && query=(-q $1)
   tmux switch-client -t $(tmux list-sessions | cut -f 1 -d ":" \
     | fzf-tmux -d 20% -- -e -i -1 \
     --bind=tab:toggle-up,btab:toggle-down $query[@]) 2>/dev/null
 }
+
+zle -N tmuxt
 
 [[ -n "$TMUX" ]] && export TERM="screen-256color"
 

@@ -8,10 +8,8 @@ tmux set -g escape-time 0
 tmux set focus-events on
 tmux set bell-action none
 
+tmuxt set -a terminal-overrides ',xterm:RGB'
 tmux set default-terminal "screen-256color"
-
-tmux set -a terminal-overrides ",xterm:Tc"
-tmux set -a terminal-overrides ",xterm-256color:Tc"
 
 tmux set destroy-unattached off
 
@@ -26,67 +24,69 @@ tmux set default-shell $SHELL
 source "${${(%):-%N}:h}"/helpers.zsh
 
 # Vi-mode
+local is_ssh_like=( 'tmux show -v "@is_ssh_like_#{pane_id}"' 'grep .')
+
 local is_vim=( 'echo "#{pane_current_command}"' \
   'grep -iqE "(^|\/)g?(view|n?vim?x?|ssh|mosh-client)(diff)?$"' )
 
 local is_ssh=( 'echo "#{pane_current_command}"' \
   'grep -iqE "(^|\/)g?(ssh|mosh-client)$"' )
 
-local is_mosh=( "${${${(%):-%N}:A}:h}/is_mosh.sh" )
-
 zstyle -s ':prezto:module:editor' key-bindings 'mode'
 
-[[ "$mode" == (vi|) ]] \
-  && tmux set-window-option -g mode-keys vi
+if [[ "$mode" == (vi|) ]]; then
+  tmux set-window-option -g mode-keys vi
 
-tmux bind-key , new-window
+  tmux bind-key , new-window
 
-local table_opt='-t' vi_copy='vi-copy' \
-  send_keys='' send_keys_opt=''
+  local table_opt='-t' vi_copy='vi-copy' \
+    send_keys='' send_keys_opt=''
 
-tmux bind -n C-h if-shell "${(j: | :)is_vim}" \
-  "send-keys C-h" "select-pane -L"
+  tmux_is_at_least_v 2.4 && table_opt="-T"
+  tmux_is_at_least_v 2.4 && vi_copy="copy-mode-vi"
 
-tmux bind -n C-j if-shell "${(j: | :)is_vim}" \
-  "send-keys C-j" "select-pane -D"
+  tmux_is_at_least_v 2.4 && send_keys_opt="-X"
+  tmux_is_at_least_v 2.4 && send_keys="send-keys"
 
-tmux bind -n C-k if-shell "${(j: | :)is_vim}" \
-  "send-keys C-k" "select-pane -U"
+  tmux unbind-key ${table_opt} ${vi_copy} v
 
-tmux bind -n C-l if-shell "${(j: | :)is_vim}" \
-  "send-keys C-l" "select-pane -R"
+  tmux bind-key ${table_opt} ${vi_copy}  'v' \
+    ${send_keys} ${send_keys_opt} begin-selection
 
-tmux bind - if-shell "${(j: | :)is_ssh}" \
-  "send-prefix; send-keys -" "split-window"
+  # tmux bind-key ${table_opt} ${vi_copy} 'C-q' \
+  #   ${send_keys} ${send_keys_opt} rectangle-toggle \\\; \
+  #   ${send_keys} ${send_keys_opt} begin-selection
 
-tmux bind 0 if-shell "${(j: | :)is_ssh}" \
-  "send-prefix; send-keys 0" "split-window -h"
+  tmux bind -n C-h if-shell "${(j: | :)is_vim} || ${(j: | :)is_ssh_like}" \
+    "send-keys C-h" "select-pane -L"
 
-tmux bind o if-shell "${(j: | :)is_ssh}" \
-  "send-prefix; send-keys o" "resize-pane -Z"
+  tmux bind -n C-j if-shell "${(j: | :)is_vim} || ${(j: | :)is_ssh_like}" \
+    "send-keys C-j" "select-pane -D"
 
-tmux bind \[ if-shell "${(j: | :)is_ssh}" \
-  "send-prefix; send-keys [" "copy-mode -e"
+  tmux bind -n C-k if-shell "${(j: | :)is_vim} || ${(j: | :)is_ssh_like}" \
+    "send-keys C-k" "select-pane -U"
 
-tmux bind \] if-shell "${(j: | :)is_ssh}" \
-  "send-prefix; send-keys ]" "paste-buffer -p"
+  tmux bind -n C-l if-shell "${(j: | :)is_vim} || ${(j: | :)is_ssh_like}" \
+    "send-keys C-l" "select-pane -R"
 
-tmux_is_at_least 2.4 && table_opt="-T"
-tmux_is_at_least 2.4 && vi_copy="copy-mode-vi"
+  tmux bind -  if-shell "${(j: | :)is_ssh} || ${(j: | :)is_ssh_like}" \
+    "send-prefix; send-keys -" "split-window"
 
-tmux_is_at_least 2.4 && send_keys_opt="-X"
-tmux_is_at_least 2.4 && send_keys="send-keys"
+  tmux bind 0  if-shell "${(j: | :)is_ssh} || ${(j: | :)is_ssh_like}" \
+    "send-prefix; send-keys 0" "split-window -h"
 
-tmux unbind-key ${table_opt} ${vi_copy} v
+  tmux bind o  if-shell "${(j: | :)is_ssh} || ${(j: | :)is_ssh_like}" \
+    "send-prefix; send-keys o" "resize-pane -Z"
 
-tmux bind-key ${table_opt} ${vi_copy}   'v' \
-  ${send_keys} ${send_keys_opt} begin-selection
+  tmux bind \[ if-shell "${(j: | :)is_ssh} || ${(j: | :)is_ssh_like}" \
+    "send-prefix; send-keys [" "copy-mode -e"
 
-# tmux bind-key ${table_opt} ${vi_copy} 'C-q' \
-#   ${send_keys} ${send_keys_opt} rectangle-toggle \\\; \
-#   ${send_keys} ${send_keys_opt} begin-selection
+  tmux bind \] if-shell "${(j: | :)is_ssh} || ${(j: | :)is_ssh_like}" \
+    "send-prefix; send-keys ]" "paste-buffer -p"
 
-unset {table,send_keys}_opt vi_copy send_keys is_{ssh,vim}
+  unset {table,send_keys}_opt vi_copy \
+    send_keys is_{ssh,ssh_like,vim}
+fi
 
 # Separators
 tmux set pane-border-fg colour240

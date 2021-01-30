@@ -10,14 +10,14 @@ export LANGUAGE="$LC_ALL"
 # Ensure path arrays do not contain duplicates.
 typeset -gU cdpath fpath mailpath path
 
-# Set the list of directories that Zsh searches for man paths.
-manpath=( $HOME/.local/share/man /usr/{local,share,}/man )
-
 # Set the list of non-system c++ include directories
-export CPLUS_INCLUDE_PATH="$HOME/.local/include/"
+export CPLUS_INCLUDE_PATH="$HOME/.local/include/:/usr/local/include/eigen3"
 
 # Set the list of directories that Zsh searches for programs.
 path=( $HOME/{,.local/}bin {/usr/local,/usr,}/{sbin,bin} /usr/games )
+
+# Set the list of directories that Zsh searches for man paths.
+manpath=( $HOME/.local/share/man /usr/{local,share,}/man )
 
 
 # Colors

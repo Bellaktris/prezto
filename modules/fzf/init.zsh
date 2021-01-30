@@ -21,8 +21,15 @@ export FZF_CTRL_T_OPTS='--preview-window=up'
 
 
 # Fzf
-source $HOME/.fzf/shell/completion.zsh   $>/dev/null
-source $HOME/.fzf/shell/key-bindings.zsh $>/dev/null
+if [[ -d $HOME/.fzf ]]; then
+  source $HOME/.fzf/shell/completion.zsh   $>/dev/null
+  source $HOME/.fzf/shell/key-bindings.zsh $>/dev/null
+else
+  git clone --depth 1 https://github.com/junegunn/fzf.git $HOME/.fzf
+  $HOME/.fzf/install --key-bindings --completion --no-update-rc
+  source $HOME/.fzf/shell/completion.zsh   $>/dev/null
+  source $HOME/.fzf/shell/key-bindings.zsh $>/dev/null
+fi
 
 for keymap in 'emacs' 'viins' 'vicmd' 'afu-vicmd'
 do
