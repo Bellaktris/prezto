@@ -4,7 +4,6 @@
 *.zwc
 *.zwc.old
 modules/*/cache.zsh
-
 runcoms/.prompt_shot
 runcoms/.zprofile-local
 runcoms/.zshrc-local

@@ -12,7 +12,7 @@ if [[ "$TERM" == 'dumb' ]]; then
 fi
 
 # Add zsh-completions to $fpath.
-fpath=("${${(%):-%N}:h}/external/zsh-completions/src" $fpath)
+fpath=("${${(%):-%N}:h}/external-modules/zsh-completions/src" $fpath)
 
 # Add additional completions
 fpath=("${${(%):-%N}:h}/completions" $fpath)
@@ -140,7 +140,7 @@ zstyle ':completion:*:history-words' remove-all-dups yes
 zstyle ':completion:*:history-words' list false
 zstyle ':completion:*:history-words' menu yes
 
-# Environmental Variables
+# Environment Variables
 zstyle ':completion::*:(-command-|export):*' fake-parameters ${${${_comps[(I)-value-*]#*,}%%,*}:#-*-}
 
 # Populate hostname completion. But allow ignoring custom entries from static
@@ -230,7 +230,7 @@ then
   zstyle ':auto-fu:var' enable all
   zstyle ':auto-fu:var' disable magic-space
 
-  source "${${(%):-%N}:h}/external/autocompletion/auto-fu" && auto-fu-install
+  source "${${(%):-%N}:h}/external-modules/autocompletion/auto-fu" && auto-fu-install
 fi  # zstyle -t ':prezto:module:completion' autocompletion 'yes'
 
 

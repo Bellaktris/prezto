@@ -1,45 +1,64 @@
 [submodule "modules/autosuggestions/external"]
 	path = modules/autosuggestions/external
 	url = https://github.com/zsh-users/zsh-autosuggestions.git
+	shallow = true
 [submodule "modules/history-substring-search/external"]
 	path = modules/history-substring-search/external
 	url = https://github.com/zsh-users/zsh-history-substring-search.git
+	shallow = true
 [submodule "modules/syntax-highlighting/external"]
 	path = modules/syntax-highlighting/external
 	url = https://github.com/zsh-users/zsh-syntax-highlighting.git
+	shallow = true
 [submodule "modules/prompt/external/powerline"]
 	path = modules/prompt/external/powerline
 	url = https://github.com/davidjrice/prezto_powerline.git
+	shallow = true
 [submodule "modules/prompt/external/agnoster"]
 	path = modules/prompt/external/agnoster
 	url = https://github.com/agnoster/agnoster-zsh-theme.git
+	shallow = true
 [submodule "modules/prompt/functions/pure"]
 	path = modules/prompt/external/pure
 	url = https://github.com/sindresorhus/pure.git
+	shallow = true
 [submodule "modules/fasd/external"]
 	path = modules/fasd/external
 	url = https://github.com/clvv/fasd.git
+	shallow = true
 [submodule "modules/prompt/external/async"]
 	path = modules/prompt/external/async
 	url = https://github.com/mafredri/zsh-async.git
+	shallow = true
 [submodule "modules/prompt/external/powerlevel9k"]
 	path = modules/prompt/external/powerlevel9k
 	url = https://github.com/bhilburn/powerlevel9k.git
+	shallow = true
+[submodule "modules/prompt/external/powerlevel10k"]
+	path = modules/prompt/external/powerlevel10k
+	url = https://github.com/romkatv/powerlevel10k.git
+	shallow = true
 [submodule "modules/editor/external/visual-mode"]
 	path = modules/editor/external/visual-mode
 	url = https://github.com/b4b4r07/zsh-vimode-visual.git
+	shallow = true
 [submodule "modules/tmux/external/tmux-yank"]
 	path = modules/tmux/external/tmux-yank
 	url = https://github.com/tmux-plugins/tmux-yank.git
+	shallow = true
 [submodule "modules/tmux/external/tmux-mem-cpu-status"]
 	path = modules/tmux/external/tmux-mem-cpu-status
 	url = https://github.com/thewtex/tmux-mem-cpu-load.git
+	shallow = true
 [submodule "modules/tmux/external/tmux-battery-status"]
 	path = modules/tmux/external/tmux-battery-status
 	url = https://github.com/tmux-plugins/tmux-battery.git
-[submodule "modules/completion/external/autocompletion"]
-	path = modules/completion/external/autocompletion
+	shallow = true
+[submodule "modules/completion/external-modules/autocompletion"]
+	path = modules/completion/external-modules/autocompletion
 	url = https://github.com/Bellaktris/auto-fu.git
-[submodule "modules/completion/external/zsh-completions"]
-	path = modules/completion/external/zsh-completions
+	shallow = true
+[submodule "modules/completion/external-modules/zsh-completions"]
+	path = modules/completion/external-modules/zsh-completions
 	url = https://github.com/zsh-users/zsh-completions.git
+	shallow = true

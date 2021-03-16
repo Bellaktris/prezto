@@ -1,23 +1,42 @@
 #!/usr/bin/env zsh
 
-(( $# < 2 )) && \
-  print "No input files provided" && return 0
+if (( $# < 2 )); then
+  cat >&2 <<EOF
+usage: $0 [archive_name.zip] [/path/to/include/into/archive ...]
+
+Where 'archive.zip' uses any of the following extensions:
+
+.tar.gz, .tar.bz2, .tar.xz, .tar.lzma, .tar, .zip, .rar, .7z
+
+There is no '-v' switch; all operations are verbose.
+EOF
+return 1
+fi
 
 [[ -f "${@[-1]}" ]] && \
   print "File exists already" && return 0
 
 
-(( $+commands[pbzip2] )) && local _bzip2_bin='pbzip2' \
-  || { echo "Warning: Install pbzip2"; local _bzip2_bin='bzip2' }
+if (( $+commands[lbzip2] )); then
+  _bzip2_bin='lbzip2'
+elif (( $+commands[pbzip2] )); then
+  _bzip2_bin='pbzip2'
+else
+  echo "Warning: Install pbzip2 or lbzip2"
+  _bzip2_bin='bzip2'
+fi
 
 (( $+commands[pigz] )) && local _gzip_bin='pigz' \
   || { echo "Warning: Install pigz"; local _gzip_bin='gzip' }
+
+(( $+commands[pixz] )) && local _xz_bin='pixz' \
+  || { echo "Warning: Install pixz"; local _xz_bin='xz' }
 
 case ${@[-1]} in
 
   (*.tar.lzma|*.tlz) tar -cvf ${@[-1]} --lzma ${@[1, -2]} && return 0;;
 
-  (*.tar.xz|*.txz) tar -cv ${@[1, -2]} | xz -c -9 > ${@[-1]} && return 0;;
+  (*.tar.xz|*.txz) tar -cv ${@[1, -2]} | ${_xz_bin} -c -9 > ${@[-1]} && return 0;;
 
   (*.tar.bz|*.tbz|*.tbz2) tar -cv ${@[1, -2]} | \
      ${_bzip2_bin} -c -9 -n > ${@[-1]}  && return 0;;
