@@ -230,25 +230,7 @@ then
   zstyle ':auto-fu:var' enable all
   zstyle ':auto-fu:var' disable magic-space
 
-  zstyle ':auto-fu:var' autoable-function/skiplines \
-    '([[:print:]]##[[:space:]]##|(#s)[[:space:]]#)(blaze|blaze64|buck|g4d|g4|tw|clowder|buck) ?*' \
-    '([[:print:]]##[[:space:]]##|(#s)[[:space:]]#)(aptitude|apt|apt-get|yum|brew|pip|pip3|hg) [[:print:]]# ?*' \
-    '([[:print:]]##[[:space:]]##|(#s)[[:space:]]#)(touch|mkdir|npm|scp|make|yarn) ?*'
-
-  zstyle ':auto-fu:var' autoable-function/skipwords '/home/' '/mnt/vol/*'
-
   source "${${(%):-%N}:h}/external/autocompletion/auto-fu" && auto-fu-install
-
-  # it a hack, of course...
-  bindkey -M afu "$key_info[Right]" afu-cursor-right
-  bindkey -M afu  "$key_info[Left]" afu-cursor-left
-
-  afu-cursor-left()  { (( CURSOR -= 1 )) } && zle -N afu-cursor-left
-  afu-cursor-right() { (( CURSOR += 1 )) } && zle -N afu-cursor-right
-
-  zle-line-init() { afu_in_p=0; auto-fu-init; } && zle -N zle-line-init
-
-  bindkey -M afu "$terminfo[kcbt]" reverse-menu-complete
 fi  # zstyle -t ':prezto:module:completion' autocompletion 'yes'
 
 

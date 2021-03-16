@@ -56,7 +56,8 @@
       { local ZSHFU_DIR="${MOD_DIR}/completion/external/autocompletion/"
         local ZSHFU="${ZSHFU_DIR}/auto-fu.zsh"
 
-        source ${ZSHFU}; auto-fu-zcompile $ZSHFU $ZSHFU_DIR; zbuild "${ZSHFU_DIR}/auto-fu" }
+        # source ${ZSHFU}; auto-fu-zcompile $ZSHFU $ZSHFU_DIR
+        zbuild "${ZSHFU_DIR}/auto-fu" }
 
   for file in "${MOD_DIR}"/completion/completions/_^*.zwc; do zbuild "${file}"; done
 

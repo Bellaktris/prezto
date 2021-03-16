@@ -63,9 +63,9 @@ if [[ -z "$TMUX" && -z "$INSIDE_EMACS" && -z "$VIM" \
 
   {
     pushd ${plug_dir}/tmux-yank
-    source "./yank.tmux" &>/dev/null
+    source "./yank.tmux"
     popd
-  }
+  } &>/dev/null
 
   # Attach to the starting session or to the last session used.
   exec tmux $_tmux_iterm_integration attach-session && exit 0;

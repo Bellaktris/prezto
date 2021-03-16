@@ -40,7 +40,7 @@ is_hg_repo() {
 # Aliases
 #
 
-function rm cp mv () {
+function rm mv () {
     if is_git_repo; then
         git $0 "$@" &>/dev/null || command $0 "$@"
     else
@@ -55,6 +55,10 @@ function rm cp mv () {
       fi
     fi
 }
+
+if zstyle -T ':prezto:module:utility' safe-ops; then
+  alias cp='cp -i'
+fi
 
 # Disable correction.
 alias ack='nocorrect ack'
@@ -77,6 +81,9 @@ alias rm='nocorrect rm'
 
 (( $+commands[ag] )) \
   && alias rg='nocorrect ag --smart-case'
+
+(( $+commands[bat] )) \
+  && alias cat='nocorrect bat'
 
 # Disable globbing.
 alias wget='noglob wget'
@@ -161,7 +168,11 @@ alias lu='lt -u'         # Lists sorted by date, most recent last, shows access 
 alias sl='ls'            # I often screw this up.
 
 # This is how I use ls usually
-alias ls='ls -a -h'
+if ls --color -d . >/dev/null 2>&1; then
+  alias ls='ls -a -h --color=auto'
+else
+  alias ls='ls -a -h -G'
+fi
 
 # Grep
 if zstyle -t ':prezto:module:utility:grep' color; then

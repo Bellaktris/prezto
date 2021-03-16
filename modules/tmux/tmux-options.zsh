@@ -8,7 +8,8 @@ tmux set -g escape-time 0
 tmux set focus-events on
 tmux set bell-action none
 
-tmuxt set -a terminal-overrides ',xterm:RGB'
+tmux set -a terminal-overrides ',xterm-256color:RGB'
+tmux set -a terminal-overrides ',xterm:RGB'
 tmux set default-terminal "screen-256color"
 
 tmux set destroy-unattached off
