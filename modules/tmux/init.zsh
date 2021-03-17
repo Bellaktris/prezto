@@ -77,7 +77,7 @@ fi
 alias tmuxl='tmux list-sessions'
 alias tmuxa="tmux $_tmux_iterm_integration new-session -A"
 
-functions ssh-like() {
+function ssh-like() {
   tmux set -q "@is_ssh_like_$TMUX_PANE" "1"
   $@
   tmux set -q "@is_ssh_like_$TMUX_PANE" ""
