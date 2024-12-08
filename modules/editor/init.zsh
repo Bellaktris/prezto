@@ -104,7 +104,7 @@ function editor-info {
     unset editor_info
     typeset -gA editor_info
 
-    if [[ "$KEYMAP" == 'vicmd' ]]; then
+    if [[ "$KEYMAP" == *vicmd ]]; then
       zstyle -s ':prezto:module:editor:info:keymap:alternate' format 'REPLY'
       editor_info[keymap]="$REPLY"
     else
@@ -426,11 +426,15 @@ for keymap in 'emacs' 'viins'; do
   bindkey -M "$keymap" "$key_info[Left]" backward-char
   bindkey -M "$keymap" "$key_info[Right]" forward-char
 
-  # Space+AnyModifier support
-  bindkey -sM "$keymap" "^@" " "
+  # [Space|Enter]+AnyModifier support
+  bindkey -sM "$keymap" "\e[13;2u" "$key_info[Enter]"
+  bindkey -sM "$keymap" "\e[13;5u" "$key_info[Enter]"
+  bindkey -sM "$keymap" "\e[13;6u" "$key_info[Enter]"
+
   bindkey -sM "$keymap" "\e[32;2u" " "
   bindkey -sM "$keymap" "\e[32;5u" " "
   bindkey -sM "$keymap" "\e[32;6u" " "
+  bindkey -sM "$keymap" "^@" " "
 
   # Expand history on space.
   bindkey -M "$keymap" ' ' magic-space

@@ -10,9 +10,6 @@ export LANGUAGE="$LC_ALL"
 # Ensure path arrays do not contain duplicates.
 typeset -gU cdpath fpath mailpath path
 
-# Set the list of non-system c++ include directories
-export CPLUS_INCLUDE_PATH="$HOME/.local/include/:/usr/local/include/eigen3"
-
 # Set the list of directories that Zsh searches for programs.
 path=( $HOME/{,.local/}bin {/usr/local,/usr,}/{sbin,bin} /usr/games )
 
@@ -35,20 +32,12 @@ export TMPPREFIX="${TMPDIR%/}/zsh"
 
 
 # Editors
-[[ -z $EDITOR ]] && \
-  { A="vi|(n|)vim|nano"
-    EDITORS="$commands[(I)($A)]"
-    EDITORS=( ${=EDITORS} )
+export PAGER='less'
 
-    EDITORS=(
-      $EDITORS[4]
-      $EDITORS[1]
-      $EDITORS[3]
-      $EDITORS[2] )
-
-    export PAGER='less';
-    export EDITOR=$EDITORS[1]
-    export VISUAL=$EDITORS[1] }
+if command -v nvim &>/dev/null; then
+  export EDITOR="nvim"
+  export VISUAL="nvim"
+fi
 
 
 # Python
@@ -59,7 +48,7 @@ export PYLINTHOME="$TMPDIR/pylint.d"
 
 # Fzf
 manpath=( $HOME/.fzf/man $manpath )
-   path=( $HOME/.fzf/bin $path );
+   path=( $HOME/.fzf/bin $path )
 
 
 # Git
@@ -67,14 +56,13 @@ export GIT_CEILING_DIRECTORIES="$HOME"
 
 
 # Brew
+export HOMEBREW_NO_AUTO_UPDATE=1
 export HOMEBREW_NO_ANALYTICS=1
 
 if [[ "$OSTYPE" == darwin* ]]
 then
   [[ -d $HOME/homebrew   ]] && path=( $HOME/homebrew/bin $path )
   path=( $(brew --prefix coreutils)/libexec/gnubin $path ) 2>/dev/null
-
-  path=( /Library/TeX/texbin $path ) 2>/dev/null
 
   export BREW_PREFIX="$(brew --prefix)"
 else
@@ -83,18 +71,7 @@ else
 fi  # [[ "$OSTYPE" == darwin* ]]
 
 
-# Rust
-source $HOME/.cargo/env &>/dev/null
-
-
-# Browser
-[[ "$OSTYPE" == darwin* ]] \
-  && export BROWSER='open'
-
-
 # Less
-
-
 # Set the default Less options.
 export LESS='-g -i -M -R -S -w -z-4'
 
@@ -103,11 +80,6 @@ export LESS='-g -i -M -R -S -w -z-4'
 if (( $#commands[(i)lesspipe(|.sh)] )); then
   export LESSOPEN="| /usr/bin/env $commands[(i)lesspipe(|.sh)] %s 2>&-"
 fi
-
-
-# Intel MKL
-[[ $(getconf LONG_BIT) == "64" ]] \
-  && source /opt/intel/bin/compilervars.sh intel64 2>/dev/null
 
 
 # Source machine local environment

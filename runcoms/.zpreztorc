@@ -4,16 +4,16 @@ zstyle ':prezto:load' pmodule \
   'environment'               \
   'terminal'                  \
   'history'                   \
-  'directory'                 \
-  'spectrum'                  \
-  'utility'                   \
-  'ssh'                       \
   'archive'                   \
   'git'                       \
   'syntax-highlighting'       \
   'editor'                    \
+  'directory'                 \
+  'spectrum'                  \
+  'utility'                   \
   'completion'                \
   'fzf'                       \
+  'ssh'                       \
   'prompt'
 
 zstyle ':prezto:module:terminal' time-report 'yes'

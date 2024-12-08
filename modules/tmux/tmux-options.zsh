@@ -1,13 +1,4 @@
 # General options
-tmux set visual-activity off
-tmux setw monitor-activity off
-
-tmux set mouse on
-tmux set -g escape-time 0
-
-tmux set focus-events on
-tmux set bell-action none
-
 tmux set -a terminal-overrides ',xterm-256color:RGB'
 tmux set -a terminal-overrides ',xterm:RGB'
 tmux set default-terminal "screen-256color"
@@ -17,6 +8,15 @@ tmux set destroy-unattached off
 tmux set -g history-limit 5000
 
 tmux set default-shell $SHELL
+
+tmux setw monitor-activity off
+tmux set visual-activity off
+
+tmux set -g escape-time 0
+tmux set mouse on
+
+tmux set bell-action none
+tmux set focus-events on
 
 ! (( $+commands[reattach-to-user-namespace] )) \
   && tmux set default-command $SHELL \
@@ -28,10 +28,10 @@ source "${${(%):-%N}:h}"/helpers.zsh
 local is_ssh_like=( 'tmux show -v "@is_ssh_like_#{pane_id}"' 'grep .')
 
 local is_vim=( 'echo "#{pane_current_command}"' \
-  'grep -iqE "(^|\/)g?(view|n?vim?x?|ssh|mosh-client)(diff)?$"' )
+  'grep -iqE "(^|\/)g?(view|n?vim?x?|ssh|mosh-client|dev)(diff)?$"' )
 
 local is_ssh=( 'echo "#{pane_current_command}"' \
-  'grep -iqE "(^|\/)g?(ssh|mosh-client)$"' )
+  'grep -iqE "(^|\/)g?(ssh|mosh-client|dev)$"' )
 
 zstyle -s ':prezto:module:editor' key-bindings 'mode'
 
@@ -89,6 +89,9 @@ if [[ "$mode" == (vi|) ]]; then
     send_keys is_{ssh,ssh_like,vim}
 fi
 
+#Yank
+tmux set -g @yank_action 'copy-pipe'
+
 # Separators
 tmux set pane-border-fg colour240
 tmux set pane-active-border-fg colour240
@@ -104,6 +107,7 @@ tmux set status-right "#(${${(%):-%N}:h}/tmux-status.sh)"
 
 tmux set status-bg default
 tmux set status-fg colour136
+tmux set-option -g status-style bg=default
 
 tmux set-window-option -g window-status-fg colour244
 tmux set-window-option -g window-status-bg default

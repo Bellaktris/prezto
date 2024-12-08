@@ -99,10 +99,10 @@ if [[ -n "$TMUX" ]] && (( $+commands[fortune] )) && [[ -t 0 || -t 1 ]] \
   && [[ -n "$(tmux show-environment | grep ENABLE_FORTUNE)" ]]
 then
   zstyle -t ':prezto:module:tmux' fortune-message 'always' \
-    && { clear; fortune -as && print }
+    && { clear; fortune -s && print }
 
   zstyle -t ':prezto:module:tmux' fortune-message 'first-time' \
-    && { tmux setenv -u ENABLE_FORTUNE; clear; fortune -as && print }
+    && { tmux setenv -u ENABLE_FORTUNE; clear; fortune -s && print }
 fi
 
 # SSH/TMUX integration (a bit hacky...)

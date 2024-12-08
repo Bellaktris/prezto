@@ -1,3 +1,4 @@
+[[ $TERM_PROGRAM != "iTerm.app" ]] && \
 [[ "${ZDOTDIR}"/.prompt_shot -nt "${ZDOTDIR}"/.zpreztorc ]] \
   && cat "${ZDOTDIR}"/.prompt_shot
 

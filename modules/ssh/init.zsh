@@ -34,7 +34,7 @@ fi
 # Create a persistent SSH authentication socket.
 if [[ -S "$SSH_AUTH_SOCK" && "$SSH_AUTH_SOCK" != "$_ssh_agent_sock" ]]; then
   mkdir -p "$_ssh_agent_sock:h"
-  ln -sf "$SSH_AUTH_SOCK" "$_ssh_agent_sock"
+  ln -sf "$SSH_AUTH_SOCK" "$_ssh_agent_sock" &>/dev/null
   export SSH_AUTH_SOCK="$_ssh_agent_sock"
 fi
 

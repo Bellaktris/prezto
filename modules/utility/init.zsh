@@ -100,7 +100,6 @@ alias history='noglob history'
 alias locate='noglob locate'
 alias rake='noglob rake'
 alias rsync='noglob rsync'
-alias scp='noglob scp'
 alias sftp='noglob sftp'
 
 # Define general aliases.
@@ -129,12 +128,17 @@ if zstyle -T ':prezto:module:utility' safe-ops; then
   alias ln="${aliases[ln]:-ln} -i"
 fi
 
+# This is how I use ls usually
+alias ls='ls -a -h'
+
 # ls
 if is-callable 'dircolors'; then
   # GNU Core Utilities
 
   if zstyle -T ':prezto:module:utility:ls' dirs-first; then
-    alias ls="${aliases[ls]:-ls} --group-directories-first"
+    if ls --group-directories-first -d . >/dev/null 2>&1; then
+      alias ls="${aliases[ls]:-ls} --group-directories-first"
+    fi
   fi
 
   if zstyle -t ':prezto:module:utility:ls' color; then
@@ -147,7 +151,11 @@ if is-callable 'dircolors'; then
       fi
     fi
 
-    alias ls="${aliases[ls]:-ls} --color=auto"
+    if ls --color -d . >/dev/null 2>&1; then
+      alias ls="${aliases[ls]:-ls} --color=auto"
+    else
+      alias ls="${aliases[ls]:-ls} -G"
+    fi
   else
     alias ls="${aliases[ls]:-ls} -F"
   fi
@@ -181,13 +189,6 @@ alias lt='ll -tr'        # Lists sorted by date, most recent last.
 alias lc='lt -c'         # Lists sorted by date, most recent last, shows change time.
 alias lu='lt -u'         # Lists sorted by date, most recent last, shows access time.
 alias sl='ls'            # I often screw this up.
-
-# This is how I use ls usually
-if ls --color -d . >/dev/null 2>&1; then
-  alias ls='ls -a -h --color=auto'
-else
-  alias ls='ls -a -h -G'
-fi
 
 # Grep
 if zstyle -t ':prezto:module:utility:grep' color; then
