@@ -18,7 +18,7 @@ fpath=("${${(%):-%N}:h}/external-modules/zsh-completions/src" $fpath)
 fpath=("${${(%):-%N}:h}/completions" $fpath)
 
 # Add brew completions to $fpath.
-fpath+=( "${BREW_PREFIX}"/completions/zsh ) 2>/dev/null
+fpath+=( "${BREW_PREFIX}"/share/zsh/site-functions ) 2>/dev/null
 
 #
 # Options
@@ -32,7 +32,7 @@ setopt AUTO_LIST           # Automatically list choices on ambiguous completion.
 setopt AUTO_PARAM_SLASH    # If completed parameter is a directory, add a trailing slash.
 setopt AUTO_REMOVE_SLASH   # Remove slash if followed with delimiter.
 setopt NUMERIC_GLOB_SORT   # Sort globbing results numericaly
-setopt COMPLETE_ALIASES    # Transfer completion from commands to its alises
+unsetopt COMPLETE_ALIASES  # Expand aliases before completion (g<tab> works like git<tab>)
 setopt GLOB_COMPLETE       # Complete glob instead of expanding
 setopt MAGIC_EQUAL_SUBST   # File completion after equal signs
 setopt EXTENDED_GLOB       # Needed for file modification glob modifiers with compinit
@@ -82,32 +82,28 @@ zstyle ':completion:*' group-name ''
 zstyle ':completion:*' verbose yes
 
 # Set up completers order
-zstyle ':completion:*' completer \
-  _oldlist _complete _gnu_arg_complete _list _approximate
-
 zstyle -e ':completion:*' completer \
  'reply=(_oldlist _complete _gnu_arg_complete _list _approximate);
   (( $CURRENT <= 1 )) && reply=(_oldlist _command_complete _complete _list _approximate)'
 
 zstyle ':completion:*:-command-:*' tag-order   \
   "suffix-aliases aliases" "functions:-non-ignored" \
-  "builtins commands" reserved-words parameters _files
+  "builtins commands" reserved-words parameters files
 
 # Increase the number of errors based on the length of the typed word. But make
 # sure to cap (at 3) the max-errors to avoid hanging.
-zstyle ':completion:*:approximate:*' max-errors 1 numeric
 zstyle -e ':completion:*:approximate:*' max-errors 'reply=($((($#PREFIX+$#SUFFIX)/3>3?3:($#PREFIX+$#SUFFIX)/3))numeric)'
 
 # Ignore cache-files and executables
 local invisible_files=( '*~' '*.swp' '__pycache__' '*.pyg'
-        '*.pyc' '.DS_Store' '.DS_Store?' '.DS_Store'
+        '*.pyc' '.DS_Store' '.DS_Store?'
         '*._' '.Trashes' 'Icon?' 'ehthumbs.db' 'Thumbs.db'
         '*.sqlite' '*.com' '*.class' '*.dll' '*.exe'
         '*.bak' '*.aux' '*.glo' '*.idx' '*.o' '*.so'
         '*.toc' '*.ist' '*.acn' '*.acr' '*.alg' '*.bbl'
         '*.blg' '*.glg' '*.gls' '*.ilg' '*.ind' '*.lof'
         '*.lot' '*.maf' '*.mtc' '*.mtc1' '*.out'
-        '*.fdb_latex.mk' '*.fls'  '*.brf' '*.synctex.gz' )
+        '*.fdb_latexmk' '*.fls'  '*.brf' '*.synctex.gz' )
 
 for cmd in vi vim nvim emacs xemacs mpv; do
   zstyle ":completion:*:*:$cmd:*:*files" \
@@ -154,7 +150,7 @@ _get_hosts='
 '
 zstyle -e ':completion:*:hosts' hosts "reply=($_get_hosts)"
 zstyle -e ':completion:*:*:ping:*:hosts'  hosts "reply=($_get_hosts ya.ru google.com 8.8.8.8 8.8.4.4)"
-zstyle -e ':completion:*:*:ping6:*:hosts' hosts "reply=($_get_hosts ya.ru google.com 8.8.8.8 8.8.4.4)"
+zstyle -e ':completion:*:*:ping6:*:hosts' hosts "reply=($_get_hosts ya.ru google.com 2001:4860:4860::8888 2001:4860:4860::8844)"
 
 unset _get_hosts
 

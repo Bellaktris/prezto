@@ -43,24 +43,19 @@ is_hg_repo() {
 #
 
 function rm mv () {
+    local -a vcs_args=("${@:#-i}")
     if is_git_repo; then
-        git $0 "$@" &>/dev/null || command $0 "$@"
+        git $0 "${vcs_args[@]}" &>/dev/null || command $0 "$@"
+    elif is_hg_repo; then
+        hg $0 "${vcs_args[@]}" &>/dev/null || command $0 "$@"
     else
-      if is_hg_repo; then
-        hg $0 "$@" &>/dev/null || command $0 "$@"
-      else
         if zstyle -T ':prezto:module:utility' safe-ops; then
           command $0 -i "$@"
         else
           command $0 "$@"
         fi
-      fi
     fi
 }
-
-if zstyle -T ':prezto:module:utility' safe-ops; then
-  alias cp='cp -i'
-fi
 
 # Disable correction.
 alias ack='nocorrect ack'
@@ -230,7 +225,7 @@ alias :q='exit'
         o: a: -arg+: -start: -end:
 
       vspipe "${vs_args[@]#=}" "${@: -1}" --y4m - \
-        | command mpv "${mpv_opts[@]}" "${@:1:-1}" -
+        | command mpv ${mpv_opts} "${@:1:-1}" -
     fi
   }
 
@@ -306,11 +301,7 @@ fi
 # Miscellaneous
 
 # Serves a directory via HTTP.
-if (( $+commands[python3] )); then
-  alias http-serve='python3 -m http.server'
-else
-  alias http-serve='python -m SimpleHTTPServer'
-fi
+alias http-serve='python3 -m http.server'
 
 # Use fzf-tmux when inside tmux
 [[ -n $TMUX ]] && alias fzf='fzf-tmux'
