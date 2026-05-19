@@ -33,6 +33,7 @@ fi
 
 function _deferred_cursor_show {
   echo -ne "\e[?25h\e[?2026l"
+  unfunction TRAPEXIT 2>/dev/null
   add-zsh-hook -d precmd _deferred_cursor_show
 }
 autoload -Uz add-zsh-hook

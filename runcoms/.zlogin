@@ -46,10 +46,21 @@
       && make -C "${BUILD_DIR}" && make -C "${BUILD_DIR}" install
   fi
 
-  # Install fzf if not available
-  if (( ! $+commands[fzf] )) && [[ ! -d $HOME/.fzf ]] && (( $+commands[git] )); then
-    git clone --depth 1 https://github.com/junegunn/fzf.git $HOME/.fzf \
-      && $HOME/.fzf/install --64 --key-bindings --completion --no-update-rc
+  # Install fzf if not available (prefer system binary over git clone)
+  if (( ! $+commands[fzf] )) && [[ ! -d $HOME/.fzf ]]; then
+    if (( $+commands[brew] )); then
+      brew install fzf 2>/dev/null \
+        && "$(brew --prefix)"/opt/fzf/install --key-bindings --completion --no-update-rc 2>/dev/null
+    elif (( $+commands[apt-get] )); then
+      sudo apt-get install -y fzf 2>/dev/null
+    elif (( $+commands[dnf] )); then
+      sudo dnf install -y fzf 2>/dev/null
+    elif (( $+commands[pacman] )); then
+      sudo pacman -S --noconfirm fzf 2>/dev/null
+    elif (( $+commands[git] )); then
+      git clone --depth 1 https://github.com/junegunn/fzf.git $HOME/.fzf \
+        && $HOME/.fzf/install --64 --key-bindings --completion --no-update-rc
+    fi
   fi
 
   # Compile auto-fu and subfiles
