@@ -1,8 +1,21 @@
 #autoload
 
-# Complete words from the history-commands file create with zsh-add-history
+# Complete commands ranked by usage frequency.
+# Reads ${HISTFILE}-commands (format: "count command" per line).
 
 local message; zstyle -s ':completion:*:descriptions' format message
 zformat -f message $message d:'frequently used commands'
 
-compadd -X $message -Q -- sudo $(cat "${HISTFILE}-commands" 2>/dev/null)
+local -a cmds=( sudo )
+if [[ -f "${HISTFILE}-commands" ]]; then
+  local c n
+  while read -r c n; do
+    if [[ -n "$n" ]]; then
+      cmds+=( "$n" )
+    elif [[ -n "$c" ]]; then
+      cmds+=( "$c" )
+    fi
+  done < "${HISTFILE}-commands"
+fi
+
+(( ${#cmds} > 1 )) && compadd -V freq-cmds -X $message -Q -- $cmds

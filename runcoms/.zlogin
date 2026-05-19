@@ -52,13 +52,12 @@
       && $HOME/.fzf/install --64 --key-bindings --completion --no-update-rc
   fi
 
-  # Compile completion functions
-  ! [[ -f "${MOD_DIR}/completion/external-modules/autocompletion/auto-fu" ]] && \
-      { local ZSHFU_DIR="${MOD_DIR}/completion/external-modules/autocompletion/"
-        local ZSHFU="${ZSHFU_DIR}/auto-fu.zsh"
-
-        # source ${ZSHFU}; auto-fu-zcompile $ZSHFU $ZSHFU_DIR
-        zbuild "${ZSHFU_DIR}/auto-fu" }
+  # Compile auto-fu and subfiles
+  { local ZSHFU_DIR="${MOD_DIR}/completion/external-modules/autocompletion/"
+    for file in "${ZSHFU_DIR}"/auto-fu{,-widgets,-predicates}; do
+      [[ -f "$file" ]] && zbuild "$file"
+    done
+  }
 
   for file in "${MOD_DIR}"/completion/completions/_^*.zwc*; do zbuild "${file}"; done
 

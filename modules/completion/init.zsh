@@ -237,26 +237,71 @@ fi  # zstyle -t ':prezto:module:completion' autocompletion 'yes'
 #
 # Frequent commands completion
 #
+# Maintains a frequency-ranked file of command names at ${HISTFILE}-commands.
+# Format: "count command" per line, sorted by count descending.
+# Auto-prunes: at >150 entries, halves all counts (decay) and keeps top 100.
+#
 
 function _accept-line-and-hook() {
-  zle accept-line && local return_code="$?"
+  local ret
+  zle accept-line; ret=$?
+  (( ret == 0 )) || return $ret
 
-  [[ $return_code == 0 ]] || return $return_code
+  # Extract command name, skipping prefixes
+  local -a tokens=( ${(z)BUFFER} )
+  local -i i=1
+  while (( i <= ${#tokens} )); do
+    case "${tokens[$i]}" in
+      (*=*|sudo|noglob|nocorrect|builtin|command) (( i++ )) ;;
+      (*) break ;;
+    esac
+  done
+  local cmd="${tokens[$i]-}"
 
-  local line=$(echo ${BUFFER} | sed -e "s/^ *//"                     \
-    -e "s/^\([a-zA-Z0-9_]\+=\('[^']*'\|\"[^\"]*\"\|[^ '\"]*\) *\)//" \
-    -e "s/^sudo  *//")
+  [[ "$cmd" =~ '[/\"=]' ]] && return $ret
+  (( ${#cmd} <= 1 )) && return $ret
+  whence "$cmd" &>/dev/null || return $ret
 
-  local tokens=(${(z)line})
+  local cmdfile="${HISTFILE}-commands"
+  local -A freq
+  local k
 
-  [[ ${tokens[1]} =~ "/|\"|=" ]] && return $return_code
-  (( ${#tokens[1]} <= 1 )) && return $return_code
+  if [[ -f "$cmdfile" ]]; then
+    local c n
+    while read -r c n; do
+      if [[ -n "$n" ]]; then
+        freq[$n]=$c
+      elif [[ -n "$c" ]]; then
+        freq[$c]=${freq[$c]:-1}
+      fi
+    done < "$cmdfile"
+  fi
 
-  # TODO(yury): This is only needed because return_code is not working
-  whence ${tokens[1]} &>/dev/null || return $return_code
+  (( freq[$cmd] = ${freq[$cmd]:-0} + 1 ))
 
-  local data=$(echo "${tokens[1]}" | sort -u -m "${HISTFILE}-commands" -)
-  echo -n "$data" >! "${HISTFILE}-commands"; return $return_code
+  if (( ${#freq} > 150 )); then
+    for k in ${(k)freq}; do
+      (( freq[$k] = freq[$k] / 2 ))
+      (( freq[$k] == 0 )) && unset "freq[$k]"
+    done
+    if (( ${#freq} > 100 )); then
+      local -a sc=( ${(nO)freq} )
+      local -i threshold=${sc[100]}
+      for k in ${(k)freq}; do
+        (( freq[$k] < threshold )) && unset "freq[$k]"
+      done
+    fi
+  fi
+
+  {
+    local -a lines
+    for k in ${(k)freq}; do
+      lines+=( "$freq[$k] $k" )
+    done
+    print -l -- ${(On)lines}
+  } >! "$cmdfile"
+
+  return $ret
 }
 
 zle -N accept-line-and-hook _accept-line-and-hook
