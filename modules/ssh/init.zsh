@@ -27,14 +27,15 @@ if [[ ! -S "$SSH_AUTH_SOCK" ]]; then
   # Start ssh-agent if not started.
   if ! kill -0 "${SSH_AGENT_PID:--1}" 2>/dev/null; then
     mkdir -p "$_ssh_agent_env:h"
-    eval "$(ssh-agent | sed '/^echo /d' | tee "$_ssh_agent_env")"
+    eval "$(print -l "${(@)${(f)"$(ssh-agent)"}:#echo *}" | tee "$_ssh_agent_env")"
   fi
 fi
 
 # Create a persistent SSH authentication socket.
 if [[ -S "$SSH_AUTH_SOCK" && "$SSH_AUTH_SOCK" != "$_ssh_agent_sock" ]]; then
   mkdir -p "$_ssh_agent_sock:h"
-  ln -sf "$SSH_AUTH_SOCK" "$_ssh_agent_sock" &>/dev/null
+  ln -sf "$SSH_AUTH_SOCK" "$_ssh_agent_sock.$$"
+  mv -f "$_ssh_agent_sock.$$" "$_ssh_agent_sock"
   export SSH_AUTH_SOCK="$_ssh_agent_sock"
 fi
 
