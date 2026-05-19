@@ -109,13 +109,12 @@ fi
 if [[ -n "$TMUX" && -n "$SSH_TTY" ]];
 then
   function _tmux-preexec-hook {
-    export $(tmux show-environment | grep        "^DISPLAY") &>/dev/null
-    export $(tmux show-environment | grep  "^SSH_AUTH_SOCK") &>/dev/null
-    export $(tmux show-environment | grep    "^SSH_ASKPASS") &>/dev/null
-    export $(tmux show-environment | grep  "^SSH_AGENT_PID") &>/dev/null
-    export $(tmux show-environment | grep "^SSH_CONNECTION") &>/dev/null
-    export $(tmux show-environment | grep       "^WINDOWID") &>/dev/null
-    export $(tmux show-environment | grep     "^XAUTHORITY") &>/dev/null
+    local env_dump="$(tmux show-environment 2>/dev/null)"
+    local var line
+    for var in DISPLAY SSH_AUTH_SOCK SSH_ASKPASS SSH_AGENT_PID SSH_CONNECTION WINDOWID XAUTHORITY; do
+      line="${(M)${(f)env_dump}:#${var}=*}"
+      [[ -n "$line" ]] && export "$line"
+    done
   }
 
   autoload -Uz add-zsh-hook
