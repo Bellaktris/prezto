@@ -33,14 +33,14 @@ while (( $# > 0 )); do
   fi
 
   case "$1:l" in
-    (*.tar.gz|*.tgz) tar t${verbose:+v}vzf "$1" ;;
+    (*.tar.gz|*.tgz) tar t${verbose:+v}zf "$1" ;;
     (*.tar.bz2|*.tbz|*.tbz2) tar t${verbose:+v}jf "$1" ;;
     (*.tar.xz|*.txz) tar --xz --help &> /dev/null \
       && tar --xz -t${verbose:+v}f "$1" \
       || xzcat "$1" | tar t${verbose:+v}f - ;;
     (*.tar.zma|*.tlz) tar --lzma --help &> /dev/null \
       && tar --lzma -t${verbose:+v}f "$1" \
-      || lzcat "$1" | tar x${verbose:+v}f - ;;
+      || lzcat "$1" | tar t${verbose:+v}f - ;;
     (*.tar) tar t${verbose:+v}f "$1" ;;
     (*.zip|*.jar) unzip -l${verbose:+v} "$1" ;;
     (*.rar) ( (( $+commands[unrar] )) \

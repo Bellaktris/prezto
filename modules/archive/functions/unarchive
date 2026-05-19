@@ -97,7 +97,18 @@ while (( $# > 0 )); do
       cd ..
     ;;
     (*.rpm)
-      tar xvf "${file_path}"
+      if (( $+commands[rpm2cpio] )); then
+        mkdir -p "$extract_dir" && cd "$extract_dir"
+        rpm2cpio "${file_path}" | cpio -idmv
+        cd ..
+      elif (( $+commands[bsdtar] )); then
+        mkdir -p "$extract_dir" && cd "$extract_dir"
+        bsdtar xvf "${file_path}"
+        cd ..
+      else
+        print "$0: rpm2cpio or bsdtar required to extract RPMs" >&2
+        success=1
+      fi
     ;;
     (*)
       print "$0: cannot extract: $1" >&2

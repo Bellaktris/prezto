@@ -2,7 +2,7 @@
 
 if (( $# < 2 )); then
   cat >&2 <<EOF
-usage: $0 [archive_name.zip] [/path/to/include/into/archive ...]
+usage: $0 [/path/to/include/into/archive ...] [archive_name.zip]
 
 Where 'archive.zip' uses any of the following extensions:
 
@@ -38,7 +38,7 @@ case ${@[-1]} in
 
   (*.tar.xz|*.txz) tar -cv ${@[1, -2]} | ${_xz_bin} -c -9 > ${@[-1]} && return 0;;
 
-  (*.tar.bz|*.tbz|*.tbz2) tar -cv ${@[1, -2]} | \
+  (*.tar.bz2|*.tar.bz|*.tbz|*.tbz2) tar -cv ${@[1, -2]} | \
      ${_bzip2_bin} -c -9 -n > ${@[-1]}  && return 0;;
 
   (*.tar.gz|*.tgz) tar -cv ${@[1, -2]} | \
@@ -54,7 +54,7 @@ case ${@[-1]} in
 
   (*.gz) ${_gzip_bin} -r -c -9 -n ${@[1, -2]} > ${@[-1]} && return 0;;
 
-  (*.bz|*.bz2) ${_bzip2_bin} -r -c -9    ${@[1, -2]} > ${@[-1]} && return 0;;
+  (*.bz|*.bz2) ${_bzip2_bin} -c -9 ${@[1, -2]} > ${@[-1]} && return 0;;
 esac
 
 print "Given archive name is of unknown type, unfortunately ;("

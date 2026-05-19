@@ -1,9 +1,13 @@
 echo -ne "\e[?25l"
 TRAPEXIT() { echo -ne "\e[?25h" }
 
-[[ $TERM_PROGRAM != "iTerm.app" ]] && \
-[[ "${ZDOTDIR}"/.prompt_shot -nt "${ZDOTDIR}"/.zpreztorc ]] \
-  && cat "${ZDOTDIR}"/.prompt_shot
+local _pcached=0
+if [[ $TERM_PROGRAM != "iTerm.app" ]] && \
+   [[ "${ZDOTDIR}"/.prompt_shot -nt "${ZDOTDIR}"/.zpreztorc ]]; then
+  echo -ne "\e7"
+  cat "${ZDOTDIR}"/.prompt_shot
+  _pcached=1
+fi
 
 source "${ZDOTDIR}/.zpreztorc"; source "${ZDOTDIR}/../init.zsh"
 
@@ -26,4 +30,19 @@ for keymap in 'vicmd' 'afu-vicmd'; do
   bindkey -M ${keymap} '0' vi-end-of-line &>/dev/null; done;
 
 # Source machine local options
-source "${ZDOTDIR}"/.zshrc-local 2>/dev/null; echo -ne "\r\e[?25h"
+source "${ZDOTDIR}"/.zshrc-local 2>/dev/null
+
+# Begin synchronized output so the terminal buffers the clear + prompt
+# draw as a single atomic frame (no visible blank gap).
+# Restore cursor, clear the cached prompt, and defer cursor-show to
+# precmd so it appears together with the real prompt.
+if (( _pcached )); then
+  echo -ne "\e[?2026h\e8\e[J"
+fi
+
+function _deferred_cursor_show {
+  echo -ne "\e[?25h\e[?2026l"
+  add-zsh-hook -d precmd _deferred_cursor_show
+}
+autoload -Uz add-zsh-hook
+add-zsh-hook precmd _deferred_cursor_show

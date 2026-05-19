@@ -1,7 +1,7 @@
 # General options
-tmux set -a terminal-overrides ',xterm-256color:RGB'
-tmux set -a terminal-overrides ',xterm:RGB'
-tmux set default-terminal "screen-256color"
+tmux set -ga terminal-features ',xterm-256color:RGB'
+tmux set -ga terminal-features ',xterm:RGB'
+tmux set -g default-terminal "tmux-256color"
 
 tmux set destroy-unattached off
 
@@ -18,11 +18,7 @@ tmux set mouse on
 tmux set bell-action none
 tmux set focus-events on
 
-if (( $+commands[reattach-to-user-namespace] )); then
-  tmux set default-command "reattach-to-user-namespace -l $SHELL"
-else
-  tmux set default-command $SHELL
-fi
+tmux set default-command $SHELL
 
 source "${${(%):-%N}:h}"/helpers.zsh
 
@@ -42,23 +38,10 @@ if [[ "$mode" == (vi|) ]]; then
 
   tmux bind-key , new-window
 
-  local table_opt='-t' vi_copy='vi-copy' \
-    send_keys='' send_keys_opt=''
+  tmux unbind-key -T copy-mode-vi v
 
-  tmux_is_at_least_v 2.4 && table_opt="-T"
-  tmux_is_at_least_v 2.4 && vi_copy="copy-mode-vi"
-
-  tmux_is_at_least_v 2.4 && send_keys_opt="-X"
-  tmux_is_at_least_v 2.4 && send_keys="send-keys"
-
-  tmux unbind-key ${table_opt} ${vi_copy} v
-
-  tmux bind-key ${table_opt} ${vi_copy}  'v' \
-    ${send_keys} ${send_keys_opt} begin-selection
-
-  # tmux bind-key ${table_opt} ${vi_copy} 'C-q' \
-  #   ${send_keys} ${send_keys_opt} rectangle-toggle \\\; \
-  #   ${send_keys} ${send_keys_opt} begin-selection
+  tmux bind-key -T copy-mode-vi 'v' \
+    send-keys -X begin-selection
 
   tmux bind -n C-h if-shell "${(j: | :)is_vim} || ${(j: | :)is_ssh_like}" \
     "send-keys C-h" "select-pane -L"
@@ -87,8 +70,7 @@ if [[ "$mode" == (vi|) ]]; then
   tmux bind \] if-shell "${(j: | :)is_ssh} || ${(j: | :)is_ssh_like}" \
     "send-prefix; send-keys ]" "paste-buffer -p"
 
-  unset {table,send_keys}_opt vi_copy \
-    send_keys is_{ssh,ssh_like,vim}
+  unset is_{ssh,ssh_like,vim}
 fi
 
 #Yank
@@ -107,9 +89,7 @@ tmux set status-right-length 140
 
 tmux set status-right "#(${${(%):-%N}:h}/tmux-status.sh)"
 
-tmux set status-bg default
-tmux set status-fg colour136
-tmux set-option -g status-style bg=default
+tmux set-option -g status-style bg=default,fg=colour136
 
 tmux set-window-option -g window-status-style fg=colour244,bg=default
 tmux set-window-option -g window-status-current-style fg=colour166,bg=default

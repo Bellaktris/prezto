@@ -23,7 +23,7 @@ if ([[ "$TERM_PROGRAM" = 'iTerm.app' ]] && \
   _tmux_iterm_integration='-CC'
 fi
 
-if [[ -z "$TMUX" && -z "$EMACS" && -z "$VIM" && -z "$INSIDE_EMACS" && "$TERM_PROGRAM" != "vscode" && ! $TERM =~ screen\\* ]] && ( \
+if [[ -z "$TMUX" && -z "$EMACS" && -z "$VIM" && -z "$INSIDE_EMACS" && "$TERM_PROGRAM" != "vscode" && ! $TERM =~ ^(screen|tmux) ]] && ( \
   ( [[ -n "$SSH_TTY" ]] && zstyle -t ':prezto:module:tmux:auto-start' remote ) ||
   ( [[ -z "$SSH_TTY" ]] && zstyle -t ':prezto:module:tmux:auto-start' local ) \
 ); then
@@ -92,7 +92,7 @@ function tmuxt() {
 
 zle -N tmuxt
 
-[[ -n "$TMUX" ]] && export TERM="screen-256color"
+[[ -n "$TMUX" ]] && export TERM="tmux-256color"
 
 # Print welcome quote
 if [[ -n "$TMUX" ]] && (( $+commands[fortune] )) && [[ -t 0 || -t 1 ]] \
