@@ -191,14 +191,6 @@ function vi-insert {
 }
 zle -N vi-insert
 
-# Fix zsh wrong behavior
-function vi-cmd-mode {
-    zle .vi-cmd-mode
-    BUFFER="$BUFFER "
-    CURSOR=$(($CURSOR + 1))
-}
-zle -N vi-cmd-mode
-
 # Moves to the first non-blank character then enters vi insert mode and updates
 # editor information.
 function vi-insert-bol {
@@ -503,8 +495,10 @@ function zle-isearch-exit() {
     local left=$(( $CURSOR + 1))
     local right=$(( $left + $#LASTSEARCH - 1))
 
-    [[ "$LASTSEARCH" != "$BUFFER[$left, $right]" ]] \
-      && (( CURSOR -= $#LASTSEARCH )); return 0
+    if [[ "$LASTSEARCH" != "$BUFFER[$left, $right]" ]]; then
+      (( CURSOR -= $#LASTSEARCH ))
+    fi
+    return 0
 }
 
 zle -N zle-isearch-exit

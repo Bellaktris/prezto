@@ -1,5 +1,5 @@
 echo -ne "\e[?25l"
-TRAPEXIT() { echo -ne "\e[?25h" }
+TRAPEXIT() { [[ -t 1 ]] && echo -ne "\e[?25h" }
 
 # Early prompt: show cached prompt snapshot during shell init.
 # Enable with: zstyle ':prezto:module:prompt' early-display 'yes'

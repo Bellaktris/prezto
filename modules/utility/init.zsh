@@ -20,12 +20,7 @@ fi
 #
 
 is_git_repo() {
-  local root="$(pwd -P)"
-
-  while [[ $root && ! -d $root/.git ]]
-  do; root="${root%/*}"; done
-
-  [[ $root ]] && return 0 || return 1
+  command git rev-parse --is-inside-work-tree &>/dev/null
 }
 
 is_hg_repo() {
@@ -34,7 +29,7 @@ is_hg_repo() {
   while [[ $root && ! -d $root/.hg ]]
   do; root="${root%/*}"; done
 
-  [[ $root ]] && return 0 || return 1
+  [[ -n $root ]]
 }
 
 
@@ -49,11 +44,7 @@ function rm mv () {
     elif is_hg_repo; then
         hg $0 "${vcs_args[@]}" &>/dev/null || command $0 "$@"
     else
-        if zstyle -T ':prezto:module:utility' safe-ops; then
-          command $0 -i "$@"
-        else
-          command $0 "$@"
-        fi
+        command $0 "$@"
     fi
 }
 

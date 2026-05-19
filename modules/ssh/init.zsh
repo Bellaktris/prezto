@@ -48,13 +48,13 @@ if ! ssh-add -l &>/dev/null; then
     [[ -d $HOME/.ssh ]] || echo "$HOME/.ssh doesn't exist"
 
     _ssh_identities=( $HOME/.ssh/^(config|known_hosts|authorized_keys|*.pub|rc|ssh_auth_sock)(N) )
-    _ssh_identities=( $(basename --multiple $_ssh_identities 2>/dev/null) )
+    _ssh_identities=( ${_ssh_identities:t} )
   fi
 
   if (( ${#_ssh_identities} > 0 )); then
     ssh-add "$_ssh_dir/${^_ssh_identities[@]}" 2> /dev/null
   else
-    ssh-add ${_ssh_identities:+$_ssh_dir/${^_ssh_identities[@]}} 2> /dev/null
+    ssh-add 2> /dev/null
   fi
 fi
 

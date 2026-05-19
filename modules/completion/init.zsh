@@ -258,44 +258,44 @@ function _accept-line-and-hook() {
   (( ${#cmd} <= 1 )) && return $ret
   whence "$cmd" &>/dev/null || return $ret
 
-  local cmdfile="${HISTFILE}-commands"
-  local -A freq
-  local k
-
-  if [[ -f "$cmdfile" ]]; then
-    local c n
-    while read -r c n; do
-      if [[ -n "$n" ]]; then
-        freq[$n]=$c
-      elif [[ -n "$c" ]]; then
-        freq[$c]=${freq[$c]:-1}
-      fi
-    done < "$cmdfile"
-  fi
-
-  (( freq[$cmd] = ${freq[$cmd]:-0} + 1 ))
-
-  if (( ${#freq} > 150 )); then
-    for k in ${(k)freq}; do
-      (( freq[$k] = freq[$k] / 2 ))
-      (( freq[$k] == 0 )) && unset "freq[$k]"
-    done
-    if (( ${#freq} > 100 )); then
-      local -a sc=( ${(nO)freq} )
-      local -i threshold=${sc[100]}
-      for k in ${(k)freq}; do
-        (( freq[$k] < threshold )) && unset "freq[$k]"
-      done
-    fi
-  fi
-
   {
+    local cmdfile="${HISTFILE}-commands"
+    local -A freq
+    local k
+
+    if [[ -f "$cmdfile" ]]; then
+      local c n
+      while read -r c n; do
+        if [[ -n "$n" ]]; then
+          freq[$n]=$c
+        elif [[ -n "$c" ]]; then
+          freq[$c]=${freq[$c]:-1}
+        fi
+      done < "$cmdfile"
+    fi
+
+    (( freq[$cmd] = ${freq[$cmd]:-0} + 1 ))
+
+    if (( ${#freq} > 150 )); then
+      for k in ${(k)freq}; do
+        (( freq[$k] = freq[$k] / 2 ))
+        (( freq[$k] == 0 )) && unset "freq[$k]"
+      done
+      if (( ${#freq} > 100 )); then
+        local -a sc=( ${(nO)freq} )
+        local -i threshold=${sc[100]}
+        for k in ${(k)freq}; do
+          (( freq[$k] < threshold )) && unset "freq[$k]"
+        done
+      fi
+    fi
+
     local -a lines
     for k in ${(k)freq}; do
       lines+=( "$freq[$k] $k" )
     done
-    print -l -- ${(On)lines}
-  } >! "$cmdfile"
+    print -l -- ${(On)lines} >! "$cmdfile"
+  } &!
 
   return $ret
 }

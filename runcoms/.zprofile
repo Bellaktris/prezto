@@ -19,7 +19,7 @@ manpath=( $HOME/.local/share/man /usr/{local,share,}/man )
 
 # Colors
 export COLORTERM=truecolor
-export TERM='xterm-256color'
+[[ "$TERM" == (xterm|vt100) ]] && export TERM='xterm-256color'
 
 
 # Temporary Files
@@ -31,7 +31,7 @@ export TERM='xterm-256color'
 export TMPPREFIX="${TMPDIR%/}/zsh"
 
 
-# Editors
+# Pager
 export PAGER='less'
 
 
@@ -77,6 +77,9 @@ fi  # [[ "$OSTYPE" == darwin* ]]
 if (( $+commands[nvim] )); then
   export EDITOR="nvim"
   export VISUAL="nvim"
+elif (( $+commands[vim] )); then
+  export EDITOR="vim"
+  export VISUAL="vim"
 fi
 
 
