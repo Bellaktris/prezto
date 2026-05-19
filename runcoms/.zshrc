@@ -1,25 +1,19 @@
 echo -ne "\e[?25l"
 TRAPEXIT() { echo -ne "\e[?25h" }
 
+# Early prompt: show cached prompt snapshot during shell init.
+# Enable with: zstyle ':prezto:module:prompt' early-display 'yes'
+# The snapshot is auto-generated from the active prompt theme.
 local _pcached=0
-if [[ $TERM_PROGRAM != "iTerm.app" ]] && \
-   [[ "${ZDOTDIR}"/.prompt_shot -nt "${ZDOTDIR}"/.zpreztorc ]]; then
+if [[ $TERM_PROGRAM != "iTerm.app" ]] \
+  && [[ -f "${ZDOTDIR}"/.prompt_shot ]] \
+  && [[ "${ZDOTDIR}"/.prompt_shot -nt "${ZDOTDIR}"/.zpreztorc ]]; then
   echo -ne "\e7"
   cat "${ZDOTDIR}"/.prompt_shot
   _pcached=1
 fi
 
 source "${ZDOTDIR}/.zpreztorc"; source "${ZDOTDIR}/../init.zsh"
-
-if zstyle -t ':prezto:module:prompt' theme 'sorin' \
-  && [[ ! "${ZDOTDIR}"/.prompt_shot -nt "${ZDOTDIR}"/.zpreztorc ]]
-then
-  local prompt_name="$(prompt -c | tail -n1 | awk '{print $1;}')"
-  local prompt_preview=$(eval "prompt_${prompt_name}_preview")
-
-  prompt_preview=$(echo -ne "$prompt_preview" | tail -n1 | sed "s/command.*//")
-  echo -ne "$prompt_preview\e[47m \e[0m\b" >! ${ZDOTDIR}/.prompt_shot
-fi  # [[ ! "${ZDOTDIR}"/.prompt_shot -nt "${ZDOTDIR}"/.zpreztorc ]]
 
 # Editor
 bindkey -M 'vivis' '\-' vi-visual-first-non-blank &>/dev/null
@@ -32,10 +26,7 @@ for keymap in 'vicmd' 'afu-vicmd'; do
 # Source machine local options
 source "${ZDOTDIR}"/.zshrc-local 2>/dev/null
 
-# Begin synchronized output so the terminal buffers the clear + prompt
-# draw as a single atomic frame (no visible blank gap).
-# Restore cursor, clear the cached prompt, and defer cursor-show to
-# precmd so it appears together with the real prompt.
+# Transition from cached prompt to real prompt
 if (( _pcached )); then
   echo -ne "\e[?2026h\e8\e[J"
 fi

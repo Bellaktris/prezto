@@ -40,6 +40,8 @@ zstyle ':prezto:module:utility' safe-ops 'yes'
 
 zstyle ':prezto:module:prompt' theme 'sorin'
 
+# zstyle ':prezto:module:prompt' early-display 'yes'
+
 zstyle ':prezto:module:editor' ps-context 'yes'
 
 zstyle ':prezto:module:prompt' pwd-length 'short'
