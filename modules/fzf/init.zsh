@@ -20,15 +20,28 @@ export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND ./"
 export FZF_CTRL_T_OPTS='--preview-window=up'
 
 
-# Fzf
-if [[ -d $HOME/.fzf/shell ]]; then
-  source $HOME/.fzf/shell/completion.zsh   2>/dev/null
-  source $HOME/.fzf/shell/key-bindings.zsh 2>/dev/null
-elif (( $+commands[fzf] )); then
-  local fzf_base="${commands[fzf]:h:h}"
-  [[ -f $fzf_base/share/fzf/completion.zsh ]]   && source $fzf_base/share/fzf/completion.zsh
-  [[ -f $fzf_base/share/fzf/key-bindings.zsh ]] && source $fzf_base/share/fzf/key-bindings.zsh
+# Fzf shell integration (completion + key-bindings)
+local _fzf_dir
+if (( $+commands[fzf] )); then
+  local _fzf_base="${commands[fzf]:A:h:h}"
+  for _fzf_dir in \
+    $_fzf_base/shell \
+    $_fzf_base/opt/fzf/shell \
+    $_fzf_base/share/fzf \
+    $_fzf_base/share/doc/fzf/examples
+  do
+    [[ -f $_fzf_dir/completion.zsh ]] && break
+    _fzf_dir=
+  done
+elif [[ -d $HOME/.fzf/shell ]]; then
+  _fzf_dir=$HOME/.fzf/shell
 fi
+
+if [[ -n "$_fzf_dir" ]]; then
+  source $_fzf_dir/completion.zsh   2>/dev/null
+  source $_fzf_dir/key-bindings.zsh 2>/dev/null
+fi
+unset _fzf_dir _fzf_base
 
 if (( $+commands[fzf] )) || [[ -d $HOME/.fzf ]]; then
   for keymap in 'emacs' 'viins' 'vicmd' 'afu-vicmd'
