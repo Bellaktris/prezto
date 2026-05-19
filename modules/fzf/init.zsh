@@ -38,10 +38,21 @@ elif [[ -d $HOME/.fzf/shell ]]; then
 fi
 
 if [[ -n "$_fzf_dir" ]]; then
-  source $_fzf_dir/completion.zsh   2>/dev/null
-  source $_fzf_dir/key-bindings.zsh 2>/dev/null
+  # Patch key-bindings for old fzf versions that don't support --min-height
+  autoload -Uz is-at-least
+  local _fzf_version="${$(fzf --version 2>/dev/null)%% *}"
+  if [[ -n "$_fzf_version" ]] && is-at-least 0.53.0 "$_fzf_version"; then
+    source $_fzf_dir/completion.zsh   2>/dev/null
+    source $_fzf_dir/key-bindings.zsh 2>/dev/null
+  else
+    source $_fzf_dir/completion.zsh 2>/dev/null
+    # Source key-bindings but strip --min-height (unsupported before 0.53)
+    if [[ -f $_fzf_dir/key-bindings.zsh ]]; then
+      eval "$(sed 's/--min-height [^ ]*//' $_fzf_dir/key-bindings.zsh)"
+    fi
+  fi
 fi
-unset _fzf_dir _fzf_base
+unset _fzf_dir _fzf_base _fzf_version
 
 if (( $+commands[fzf] )) || [[ -d $HOME/.fzf ]]; then
   for keymap in 'emacs' 'viins' 'vicmd' 'afu-vicmd'
