@@ -181,7 +181,7 @@ unset pip_command
 zstyle -T ':prezto:module:python' conda-init
 if (( $? && $+commands[conda] )); then
   if (( $(conda ..changeps1) )); then
-    echo "To make sure Conda doesn't change your prompt (should do that in the prompt module) run:\n  conda config --set changeps1 false"
+    printf 'To make sure Conda doesn'\''t change your prompt (should do that in the prompt module) run:\n  conda config --set changeps1 false\n'
     # TODO:
     # We could just run this ourselves. In an exit hook
     # (add zsh-hook zshexit [(anonymous) function]) we could then set it back

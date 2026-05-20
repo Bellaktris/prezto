@@ -1,5 +1,5 @@
-echo -ne "\e[?25l"
-TRAPEXIT() { [[ -t 1 ]] && echo -ne "\e[?25h" }
+printf '\e[?25l'
+TRAPEXIT() { [[ -t 1 ]] && printf '\e[?25h' }
 
 # Early prompt: show cached prompt snapshot during shell init.
 # Enable with: zstyle ':prezto:module:prompt' early-display 'yes'
@@ -8,7 +8,7 @@ local _pcached=0
 if [[ $TERM_PROGRAM != "iTerm.app" ]] \
   && [[ -f "${ZDOTDIR}"/.prompt_shot ]] \
   && [[ "${ZDOTDIR}"/.prompt_shot -nt "${ZDOTDIR}"/.zpreztorc ]]; then
-  echo -ne "\e7"
+  printf '\e7'
   cat "${ZDOTDIR}"/.prompt_shot
   _pcached=1
 fi
@@ -28,11 +28,11 @@ source "${ZDOTDIR}"/.zshrc-local 2>/dev/null
 
 # Transition from cached prompt to real prompt
 if (( _pcached )); then
-  echo -ne "\e[?2026h\e8\e[J"
+  printf '\e[?2026h\e8\e[J'
 fi
 
 function _deferred_cursor_show {
-  echo -ne "\e[?25h\e[?2026l"
+  printf '\e[?25h\e[?2026l'
   unfunction TRAPEXIT 2>/dev/null
   add-zsh-hook -d precmd _deferred_cursor_show
 }

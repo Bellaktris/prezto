@@ -14,7 +14,7 @@ local shell=$(ls -l /proc/$$/exe)
 shell=( ${(s: -> :)shell} ); shell=$shell[-1]
 
 local cmd="$TMPDIR/fbterm-zsh.sh"
-echo -e "#!/bin/sh\nTERM=fbterm $shell" >! $cmd && chmod +x $cmd
+printf '#!/bin/sh\nTERM=fbterm %s\n' "$shell" >! $cmd && chmod +x $cmd
 
 zstyle -a ':prezto:module:fbterm' backgrounds '_backgrounds'
 
@@ -27,7 +27,7 @@ local _background="$_backgrounds"
 [[ -d "$_backgrounds" ]] && { files=( ~/.fbterm/*.(png|jpg) );
    _background="$(python -c "import random; A=['${(j:', ':)files}']; print(random.choice(A))")" }
 
-unset _backgrounds; echo -ne "\e[?25l";
+unset _backgrounds; printf '\e[?25l';
 
 ( sleep 0.2; cat /dev/fb0 > $TMPDIR/screen.fbimg ) \
    & fbi -t 2 -1 --noverbose -a "$_background"

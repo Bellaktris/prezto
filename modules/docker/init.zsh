@@ -32,7 +32,7 @@ function dkmd {
   pushd ~/.docker/machine/machines
 
   if [[ ! -d $1 ]]; then
-    echo "Docker machine '$1' does not exists. Abort."
+    printf "Docker machine '%s' does not exist. Abort.\n" "$1"
     popd
     return 1
   fi
@@ -40,11 +40,11 @@ function dkmd {
   if [[ -L default ]]; then
     eval $(rm -f default)
   elif [[ -d default ]]; then
-    echo "A default machine already exists. Abort."
+    printf 'A default machine already exists. Abort.\n'
     popd
     return 1
   elif [[ -e default ]]; then
-    echo "A file named 'default' already exists. Abort."
+    printf "A file named 'default' already exists. Abort.\n"
     popd
     return 1
   fi

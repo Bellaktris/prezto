@@ -45,7 +45,7 @@ if ! ssh-add -l &>/dev/null; then
   then
     zstyle -a ':prezto:module:ssh:load' identities '_ssh_identities'
   else
-    [[ -d $HOME/.ssh ]] || echo "$HOME/.ssh doesn't exist"
+    [[ -d $HOME/.ssh ]] || printf '%s/.ssh doesn'\''t exist\n' "$HOME"
 
     _ssh_identities=( $HOME/.ssh/^(config|known_hosts|authorized_keys|*.pub|rc|ssh_auth_sock)(N) )
     _ssh_identities=( ${_ssh_identities:t} )

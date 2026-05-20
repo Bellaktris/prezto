@@ -24,7 +24,7 @@ then
   local prompt_name="$(prompt -c | tail -n1 | awk '{print $1;}')"
   if (( $+functions[prompt_${prompt_name}_preview] )); then
     local prompt_preview=$(eval "prompt_${prompt_name}_preview")
-    prompt_preview=$(echo -ne "$prompt_preview" | tail -n1 | sed "s/command.*//")
-    echo -ne "$prompt_preview\e[47m \e[0m\b" >! ${ZDOTDIR}/.prompt_shot
+    prompt_preview=$(printf '%b' "$prompt_preview" | tail -n1 | sed "s/command.*//")
+    printf '%b\e[47m \e[0m\b' "$prompt_preview" >! ${ZDOTDIR}/.prompt_shot
   fi
 fi

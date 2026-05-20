@@ -82,7 +82,7 @@ function pmodload {
   zstyle -a ':prezto:load' pmodule-dirs 'user_pmodule_dirs'
   for user_dir in "$user_pmodule_dirs[@]"; do
     if [[ ! -d "$user_dir" ]]; then
-      echo "$0: Missing user module dir: $user_dir"
+      printf '%s: Missing user module dir: %s\n' "$0" "$user_dir"
     fi
   done
 
