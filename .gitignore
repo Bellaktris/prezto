@@ -1,3 +1,4 @@
+runcoms/.zcompcache/*
 .zcompdump*
 .zcompdumps/*
 .zhistory*
@@ -7,3 +8,5 @@ modules/*/cache.zsh
 runcoms/.prompt_shot
 runcoms/.zprofile-local
 runcoms/.zshrc-local
+runcoms/.zsh_history
+runcoms/.zsh_history-commands
