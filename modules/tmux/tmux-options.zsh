@@ -74,7 +74,7 @@ if [[ "$mode" == (vi|) ]]; then
 fi
 
 #Yank
-tmux set -g @yank_action 'copy-pipe'
+tmux set -g @yank_action 'copy-pipe-and-cancel'
 
 # Separators
 tmux set pane-border-style fg=colour240
