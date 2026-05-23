@@ -14,6 +14,7 @@ local plugins="${${(%):-%N}:h}/external"
 
   icon=${${icon//🌖 /⇓}//🌗 /⇓}
   icon=${${icon//🌒 /⇓}//🌕 /⇓}
+  icon=${icon//█/⚡}
 
   if [[ $TERM_PROGRAM != iTerm.app ]]
     then
