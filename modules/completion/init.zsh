@@ -42,7 +42,7 @@ unsetopt FLOW_CONTROL      # Disable start/stop characters in shell editor.
 # Load and initialize the completion system ignoring insecure directories with a
 # cache time of 20 hours, so it should almost always regenerate the first time a
 # shell is opened each day.
-autoload -Uz compinit _command_complete _gnu_arg_complete
+autoload -Uz compinit _command_complete _gnu_arg_complete _opt_file_fallback
 
 [[ -n "${ZDOTDIR:-$HOME}"/.zcompdump(Nm-20) ]] \
   && compinit -i -C || compinit -i
@@ -83,7 +83,7 @@ zstyle ':completion:*' verbose yes
 
 # Set up completers order
 zstyle -e ':completion:*' completer \
- 'reply=(_oldlist _complete _gnu_arg_complete _list _approximate);
+ 'reply=(_oldlist _opt_file_fallback _gnu_arg_complete _list _approximate);
   (( $CURRENT <= 1 )) && reply=(_oldlist _command_complete _complete _list _approximate)'
 
 zstyle ':completion:*:-command-:*' tag-order   \

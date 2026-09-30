@@ -1,0 +1,21 @@
+#autoload
+
+# Wraps _complete. If _complete added matches, return unchanged.
+# Otherwise, when the current word is `--opt=value`, retry file completion
+# on the value portion (with `--opt=` preserved in the buffer via IPREFIX).
+# Rationale: some completion functions declare `--opt=` with a description
+# but an empty action, producing only a message and no matches. Falling
+# back to _files rescues those cases without requiring per-program fixes.
+
+_complete "$@"
+local ret=$?
+
+(( ${compstate[nmatches]:-0} > 0 )) && return $ret
+[[ $PREFIX == --?*=* ]] || return $ret
+
+local eq_prefix=${PREFIX%%=*}=
+IPREFIX+=$eq_prefix
+PREFIX=${PREFIX#*=}
+_comp_mesg=
+
+_files
