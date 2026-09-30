@@ -280,7 +280,7 @@ _arguments -C -S \
   '--ao-null-outburst=-:Integer (1 to 100000) (default\: 256):' \
   '--no-ao-pcm-append' \
   '--no-audio-display' \
-  '--audio-file-paths=-:String list (default\: ):' \
+  '--audio-file-paths=-:String list (default\: ) [file]:->files' \
   '--audio-samplerate=-:Integer (1000 to 768000) (default\: 0):' \
   '--cache-backbuffer=-:Integer (0 to 2147483647) (default\: 75000):' \
   '--no-cache-default' \
@@ -381,7 +381,7 @@ _arguments -C -S \
   '--no-deinterlace' \
   '--demuxer-lavf-o=-:Key/value list (default\: ):' \
   '--demuxer-thread' \
-  '--external-files=-:String list (default\: ):' \
+  '--external-files=-:String list (default\: ) [file]:->files' \
   '--force-seekable' \
   '--no-hls-bitrate' \
   '--icc-3dlut-size=-:String (default\: 64x64x64):' \
@@ -403,7 +403,7 @@ _arguments -C -S \
   '--sub-ass-shaper=-:Choices\: simple complex (default\: complex):(simple complex)' \
   '--sub-ass-styles=-:String (default\: ) [file]:->files' \
   '--sub-back-color=-:Color:' \
-  '--sub-file-paths=-:String list (default\: ):' \
+  '--sub-file-paths=-:String list (default\: ) [file]:->files' \
   '--sub-filter-sdh' \
   '--sub-fix-timing' \
   '--sub-visibility' \
@@ -545,7 +545,7 @@ _arguments -C -S \
   '--af-defaults=-:Object settings list (default\: ):' \
   '--ao-pcm-file=-:String (default\: ) [file]:->files' \
   '--audio-delay=-:Float (default\: 0.000000):' \
-  '--audio-files=-:String list (default\: ):' \
+  '--audio-files=-:String list (default\: ) [file]:->files' \
   '--audio-spdif=-:String (default\: ):' \
   '--no-autosync' \
   '--cache-pause' \
@@ -672,7 +672,7 @@ _arguments -C -S \
   '--sdl-vsync' \
   '--sub-color=-:Color:' \
   '--sub-delay=-:Float (default\: 0.000000):' \
-  '--sub-files=-:String list (default\: ):' \
+  '--sub-files=-:String list (default\: ) [file]:->files' \
   '--sub-gauss=-:Float (0 to 3) (default\: 0.000000):' \
   '--sub-scale=-:Float (0 to 100) (default\: 1.000000):' \
   '--sub-speed=-:Float (default\: 1.000000):' \
@@ -706,7 +706,7 @@ _arguments -C -S \
   '--sub-auto=-:Choices\: no exact fuzzy all (default\: exact):(no exact fuzzy all)' \
   '--sub-blur=-:Float (0 to 20) (default\: 0.000000):' \
   '--sub-bold' \
-  '--sub-file=-:alias for sub-files-append (CLI/config files only):' \
+  '--sub-file=-:alias for sub-files-append (CLI/config files only) [file]:->files' \
   '--sub-font=-:String (default\: sans-serif):' \
   '--sub-gray' \
   '--term-osd=-:Choices\: force auto no (default\: auto):(force auto no)' \
