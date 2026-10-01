@@ -287,6 +287,82 @@ function pound-toggle {
 }
 zle -N pound-toggle
 
+# Treat any backslash-escaped character as part of a word, so that a path like
+# Downloads/Детективное\ агентство\ Дирка or Music/Rock\'n\'Roll is crossed by
+# a single word motion. Zsh has no context-sensitive word definition, so every
+# backslash pair is masked with '__' in a scratch copy of the buffer, the same
+# length so that cursor positions stay valid. Underscore is the filler because
+# it counts as a word character both for the vi motions, which classify
+# characters as blank, alnum plus underscore, or punctuation and ignore
+# $WORDCHARS entirely, and for select-word-match, which does read $WORDCHARS.
+# '/' counts for neither, so slashes keep splitting words.
+#
+# Motions only move the cursor, so restoring the buffer afterwards is enough,
+# and they stay usable as operator targets (dw, cw, yb, ...). Killing widgets
+# edit the buffer, so they have to splice it themselves.
+function _escaped-char-motion {
+  local save="$BUFFER"
+  BUFFER="${save//\\?/__}"
+  zle "$1"
+  BUFFER="$save"
+}
+
+function _escaped-char-kill {
+  local save="$BUFFER"
+  local -i from=$CURSOR to swap
+  BUFFER="${save//\\?/__}"
+  zle "$1"
+  to=$CURSOR
+  BUFFER="$save"
+  if (( from > to )); then
+    swap=$from; from=$to; to=$swap
+  fi
+  CUTBUFFER="${BUFFER[from+1,to]}"
+  BUFFER="${BUFFER[1,from]}${BUFFER[to+1,-1]}"
+  CURSOR=$from
+}
+
+for widget in \
+  vi-forward-word vi-forward-word-end vi-backward-word \
+  vi-forward-blank-word vi-forward-blank-word-end vi-backward-blank-word
+do
+  eval "function escaped-char-$widget { _escaped-char-motion .$widget }"
+  zle -N "escaped-char-$widget"
+done
+unset widget
+
+function escaped-char-backward-kill-word {
+  _escaped-char-kill .vi-backward-word
+}
+zle -N escaped-char-backward-kill-word
+
+# iw / aw text objects (ciw, diw, ...) over the whole escaped path.
+autoload -Uz select-word-match
+zle -N select-word-match
+function escaped-char-select-word-match {
+  _escaped-char-motion select-word-match
+}
+zle -N escaped-char-select-word-match
+
+# The visual-mode plugin sourced above defines its own word motions that call
+# the builtin widgets directly, so the bindings below do not reach them. They
+# only move the cursor and recompute the highlight, never touching the buffer,
+# so each one is snapshotted with zle -A and replaced by a masking wrapper
+# that delegates to the snapshot.
+for widget in \
+  vi-visual-forward-word vi-visual-forward-word-end vi-visual-backward-word \
+  vi-visual-forward-blank-word vi-visual-forward-blank-word-end \
+  vi-visual-backward-blank-word
+do
+  (( $+widgets[$widget] )) || continue
+  zle -A "$widget" "escaped-char-orig-$widget"
+  eval "function escaped-char-$widget {
+    _escaped-char-motion escaped-char-orig-$widget
+  }"
+  zle -N "$widget" "escaped-char-$widget"
+done
+unset widget
+
 #
 # Emacs Key Bindings
 #
@@ -351,6 +427,22 @@ fi
 
 # Toggle comment at the start of the line.
 bindkey -M vicmd "#" vi-pound-insert
+
+# Word motions that do not break on backslash escapes.
+bindkey -M vicmd "w" escaped-char-vi-forward-word
+bindkey -M vicmd "e" escaped-char-vi-forward-word-end
+bindkey -M vicmd "b" escaped-char-vi-backward-word
+bindkey -M vicmd "W" escaped-char-vi-forward-blank-word
+bindkey -M vicmd "E" escaped-char-vi-forward-blank-word-end
+bindkey -M vicmd "B" escaped-char-vi-backward-blank-word
+
+for textobj in 'iw' 'aw' 'iW' 'aW'
+  bindkey -M viopp "$textobj" escaped-char-select-word-match
+unset textobj
+
+# Note that this drops vi-backward-kill-word's refusal to delete past the
+# point where insert mode started.
+bindkey -M viins "$key_info[Control]W" escaped-char-backward-kill-word
 
 #
 # Emacs and Vi Key Bindings

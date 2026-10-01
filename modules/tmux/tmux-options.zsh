@@ -43,6 +43,26 @@ if [[ "$mode" == (vi|) ]]; then
   tmux bind-key -T copy-mode-vi 'v' \
     send-keys -X begin-selection
 
+  # rectangle-toggle on its own does not start a selection.
+  tmux bind-key -T copy-mode-vi 'C-v' \
+    'send-keys -X begin-selection; send-keys -X rectangle-on'
+
+  # Escape drops the selection if there is one, and otherwise leaves copy
+  # mode, the way vim returns to normal mode and then does nothing.
+  # rectangle-off is needed because clear-selection keeps the block flag,
+  # which would make the next v rectangular. selection_active rather than
+  # selection_present: the latter only becomes true once the cursor has moved
+  # away from the anchor.
+  tmux bind-key -T copy-mode-vi 'Escape' if-shell -F '#{selection_active}' \
+    'send-keys -X clear-selection; send-keys -X rectangle-off' \
+    'send-keys -X cancel'
+
+  # extended-keys always makes the terminal report ctrl-[ as a CSI u sequence,
+  # which tmux decodes to a C-[ key that is distinct from Escape rather than
+  # to the bare 0x1b the two would otherwise share. Without its own binding it
+  # is simply dropped, so re-dispatch it through the Escape binding above.
+  tmux bind-key -T copy-mode-vi 'C-[' send-keys Escape
+
   tmux bind -n C-h if-shell "${(j: | :)is_vim} || ${(j: | :)is_ssh_like}" \
     "send-keys C-h" "select-pane -L"
 
