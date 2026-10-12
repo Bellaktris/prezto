@@ -1,0 +1,225 @@
+#compdef ffprobe
+
+# Completion for ffprobe.
+#
+# Stock zsh ships `_ffmpeg` as `#compdef ffmpeg` only, and it builds its argspec
+# by parsing `ffmpeg -h` at completion time. Pointing that at ffprobe nearly
+# works, but the generic parser produces no candidates for the options that
+# matter here (-of, -select_streams, -show_entries, -loglevel), while carrying
+# ffmpeg-only special cases (-acodec, -vfilters, presets) that ffprobe lacks.
+# Hence a handwritten spec, with the expensive introspection calls cached.
+
+(( $+functions[_ffprobe_table] )) || _ffprobe_table() {
+  # ffprobe's listing options all print a flag legend, a column header, a rule
+  # of dashes, then fixed-width rows. Return the rows below the rule as
+  # "name:description" pairs, with the name taken from byte $2 onward. Parsing
+  # from the rule down rather than by flag pattern keeps legend lines (which
+  # start with the same flag characters) out of the results.
+  #
+  # The result is memoised in a global for the life of the shell: each listing
+  # costs an ffprobe exec, which is too slow to repeat per keypress.
+  local key=$1 column=$2; shift 2
+  local var=_ffprobe_table_$key
+
+  if (( ! ${#${(P)var}} )); then
+    local -a lines rows
+    local line name rest
+    lines=(${(f)"$(_call_program $key ${words[1]:-ffprobe} -v quiet "$@" 2>/dev/null)"})
+    lines=(${lines[${lines[(i)[[:space:]]#-##[[:space:]]#]}+1,-1]})
+
+    for line in $lines; do
+      # -sections indents rows to show nesting, so the name does not start at a
+      # fixed column there; the other tables are unaffected by the extra strip.
+      line=${${line[column,-1]}##[[:space:]]#}
+      name=${line%%[[:space:]]*}
+      [[ -n $name ]] || continue
+      rest=${${line#$name}##[[:space:]]#}
+      rows+=("${name}:${rest//:/\\:}")
+    done
+
+    typeset -ga $var
+    set -A $var $rows
+  fi
+
+  print -rl -- ${(P)var}
+}
+
+(( $+functions[_ffprobe_formats] )) || _ffprobe_formats() {
+  # Not named `aliases`: that is zsh's special associative array for shell
+  # aliases, and assigning an ordinary array to it fails.
+  local -a rows names alt_names
+  # -demuxers rather than -formats: ffprobe never muxes, and this spares us
+  # having to filter the muxer-only rows out by flag.
+  rows=(${(f)"$(_ffprobe_table demuxers 6 -demuxers)"})
+  # A handful of demuxers are named as a comma-separated alias list
+  # ("mov,mp4,m4a,3gp,3g2,mj2"). The whole string is the canonical -f value,
+  # but each individual alias is accepted too, so offer both.
+  names=(${rows%%:*})
+  alt_names=(${(s:,:)${(j:,:)names}})
+  alt_names=(${(ou)alt_names})
+  alt_names=(${alt_names:|names})
+  _describe -t demuxers 'demuxer' rows -- alt_names
+}
+
+(( $+functions[_ffprobe_decoders] )) || _ffprobe_decoders() {
+  local -a decoders
+  decoders=(${(f)"$(_ffprobe_table decoders 9 -decoders)"})
+  _describe -t decoders 'decoder' decoders
+}
+
+(( $+functions[_ffprobe_sections] )) || _ffprobe_sections() {
+  local -a sections
+  # Rows indent to show nesting, so strip the 4 flag characters and then the
+  # indent. Sections whose entry name differs print as "name/unique_name";
+  # -show_entries wants the unique name.
+  sections=(${${${(f)"$(_ffprobe_table sections 5 -sections)"}%%:*}:#root})
+  sections=(${sections##*/})
+  _describe -t sections 'section' sections
+}
+
+(( $+functions[_ffprobe_pix_fmts] )) || _ffprobe_pix_fmts() {
+  local -a fmts
+  fmts=(${${(f)"$(_ffprobe_table pix_fmts 7 -pix_fmts)"}%%:*})
+  _describe -t pixel-formats 'pixel format' fmts
+}
+
+(( $+functions[_ffprobe_loglevels] )) || _ffprobe_loglevels() {
+  local -a levels
+  levels=(
+    'quiet:show nothing'
+    'panic:only unrecoverable errors'
+    'fatal:errors after which the process cannot continue'
+    'error:all errors'
+    'warning:warnings and errors'
+    'info:standard informational messages (default)'
+    'verbose:info plus more verbose messages'
+    'debug:everything, including debugging info'
+    'trace:everything, including per-packet traces'
+  )
+  _describe -t loglevels 'log level' levels
+}
+
+(( $+functions[_ffprobe_stream_specifiers] )) || _ffprobe_stream_specifiers() {
+  local -a specs
+  specs=(
+    'v:video streams'
+    'a:audio streams'
+    's:subtitle streams'
+    'd:data streams'
+    't:attachment streams'
+    'V:video streams excluding attached pictures'
+    'v\:0:first video stream'
+    'a\:0:first audio stream'
+  )
+  _describe -t stream-specifiers 'stream specifier' specs
+}
+
+(( $+functions[_ffprobe_help_topics] )) || _ffprobe_help_topics() {
+  local -a topics
+  topics=(
+    'long:advanced options'
+    'full:all options including per-codec and per-format ones'
+    'decoder=:help for a decoder'
+    'demuxer=:help for a demuxer'
+    'filter=:help for a filter'
+    'bsf=:help for a bitstream filter'
+    'protocol=:help for a protocol'
+  )
+  _describe -t topics 'help topic' topics
+}
+
+local curcontext=$curcontext state line ret=1
+typeset -A opt_args
+
+# Listing options exit immediately, so they exclude everything else.
+local -a listing
+listing=(
+  -L -license -version -buildconf -formats -muxers -demuxers -devices -codecs
+  -decoders -encoders -bsfs -protocols -filters -pix_fmts -layouts -sample_fmts
+  -dispositions -colors -sections
+)
+
+_arguments -C -s \
+  "(- *)"{-L,-license}'[show the license]' \
+  "(- *)"{-h,-\?,-help,--help}'[show help for a topic]::topic:_ffprobe_help_topics' \
+  "(- *)-version[show the version]" \
+  "(- *)-buildconf[show the build configuration]" \
+  "(- *)-formats[list available formats]" \
+  "(- *)-muxers[list available muxers]" \
+  "(- *)-demuxers[list available demuxers]" \
+  "(- *)-devices[list available devices]" \
+  "(- *)-codecs[list available codecs]" \
+  "(- *)-decoders[list available decoders]" \
+  "(- *)-encoders[list available encoders]" \
+  "(- *)-bsfs[list available bit stream filters]" \
+  "(- *)-protocols[list available protocols]" \
+  "(- *)-filters[list available filters]" \
+  "(- *)-pix_fmts[list available pixel formats]" \
+  "(- *)-layouts[list standard channel layouts]" \
+  "(- *)-sample_fmts[list available audio sample formats]" \
+  "(- *)-dispositions[list available stream dispositions]" \
+  "(- *)-colors[list available color names]" \
+  "(- *)-sections[print the sections structure and exit]" \
+  '(-loglevel -v)'{-loglevel,-v}'[set the logging level]:level:_ffprobe_loglevels' \
+  '-report[write a report to a file in the current directory]' \
+  '-hide_banner[do not show the program banner]' \
+  '-max_alloc[set the maximum size of a single allocated block]:bytes:' \
+  '-cpuflags[force specific cpu flags]:flags:' \
+  '-cpucount[force a specific cpu count]:count:' \
+  '-sources[list sources of an input device]:device:' \
+  '-sinks[list sinks of an output device]:device:' \
+  '-f[force the input format]:format:_ffprobe_formats' \
+  '(-codec -c)'{-codec,-c}'[force a decoder]:decoder:_ffprobe_decoders' \
+  '-unit[show the unit of displayed values]' \
+  '-prefix[use SI prefixes for displayed values]' \
+  '-byte_binary_prefix[use binary prefixes for byte units]' \
+  '-sexagesimal[use HOURS:MM:SS.MICROSECONDS for time units]' \
+  '-pretty[prettify displayed values for human reading]' \
+  '(-output_format -print_format -of)'{-output_format,-print_format,-of}'[set the output printing format]:format:((
+    default\:"key=value, one per line"
+    compact\:"one line per section"
+    csv\:"compact with no key names"
+    flat\:"flat key=value, shell-parseable"
+    ini\:"INI format"
+    json\:"JSON"
+    xml\:"XML"))' \
+  '-select_streams[select the specified streams]:stream specifier:_ffprobe_stream_specifiers' \
+  '-data_dump_format[set the data dump format]:format:((xxd\:"hex dump" base64\:"base64"))' \
+  '-show_data[show packet data]' \
+  '-show_data_hash[show the packet data hash]:algorithm:(MD5 SHA160 SHA224 SHA256 SHA512 CRC32 adler32)' \
+  '-show_error[show the probing error]' \
+  '-show_format[show format/container info]' \
+  '-show_frames[show frame info]' \
+  '-show_entries[show a set of specified entries]:entry list:_ffprobe_sections' \
+  '-show_log[show the log]:level:' \
+  '-show_packets[show packet info]' \
+  '-show_programs[show program info]' \
+  '-show_stream_groups[show stream group info]' \
+  '-show_streams[show stream info]' \
+  '-show_chapters[show chapter info]' \
+  '-count_frames[count the number of frames per stream]' \
+  '-count_packets[count the number of packets per stream]' \
+  '-show_program_version[show the ffprobe version]' \
+  '-show_library_versions[show library versions]' \
+  '-show_versions[show program and library versions]' \
+  '-show_pixel_formats[show pixel format descriptions]' \
+  '-show_optional_fields[show optional fields]:when:(always never auto)' \
+  '(-show_private_data -private)'{-show_private_data,-private}'[show private data]' \
+  '-analyze_frames[analyze frames for additional stream-level information]' \
+  '-bitexact[force bitexact output]' \
+  '-read_intervals[set read intervals]:intervals:' \
+  '-find_stream_info[decode streams to fill in missing information]' \
+  '-print_filename[override the printed input filename]:filename:' \
+  '-i[read the specified file]:input file:_files' \
+  '-o[write to the specified output]:output file:_files' \
+  '-probesize[set the probing size in bytes]:bytes:' \
+  '-formatprobesize[number of bytes used to probe the file format]:bytes:' \
+  '-analyzeduration[microseconds analyzed to probe the input]:microseconds:' \
+  '-fpsprobesize[number of frames used to probe the fps]:frames:' \
+  '-seek2any[allow seeking to non-keyframes]:bool:(true false)' \
+  '-fflags[set format flags]:flags:(+genpts +igndts +ignidx +nofillin +noparse +discardcorrupt +sortdts +fastseek +nobuffer)' \
+  '-err_detect[set error detection flags]:flags:(+crccheck +bitstream +buffer +explode +careful +compliant +aggressive)' \
+  '-pixel_format[set the pixel format]:format:_ffprobe_pix_fmts' \
+  '*:input file:_files' && ret=0
+
+return ret
