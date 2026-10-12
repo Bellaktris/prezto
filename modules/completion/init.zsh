@@ -44,8 +44,12 @@ unsetopt FLOW_CONTROL      # Disable start/stop characters in shell editor.
 # shell is opened each day.
 autoload -Uz compinit _command_complete _gnu_arg_complete _opt_file_fallback
 
-[[ -n "${ZDOTDIR:-$HOME}"/.zcompdump(Nm-20) ]] \
-  && compinit -i -C || compinit -i
+# The glob qualifier has to be expanded where filename generation actually
+# happens: inside [[ ]] the word is left alone, so the test was unconditionally
+# true and compinit never rescanned $fpath for newly added functions.
+_compdump_fresh=("${ZDOTDIR:-$HOME}"/.zcompdump(Nm-20))
+(( $#_compdump_fresh )) && compinit -i -C || compinit -i
+unset _compdump_fresh
 
 # autoload -U bashcompinit && bashcompinit
 
