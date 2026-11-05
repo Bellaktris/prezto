@@ -63,11 +63,9 @@
     fi
   fi
 
-  # Compile auto-fu and subfiles
-  { local ZSHFU_DIR="${MOD_DIR}/completion/external-modules/autocompletion/"
-    for file in "${ZSHFU_DIR}"/auto-fu{,-widgets,-predicates}; do
-      [[ -f "$file" ]] && zbuild "$file"
-    done
+  # Compile auto-fu and its subfiles
+  { local ZSHFU_DIR="${MOD_DIR}/completion/external-modules/autocompletion"
+    for file in "${ZSHFU_DIR}"/auto-fu^*.zwc*(.N); do zbuild "$file"; done
   }
 
   for file in "${MOD_DIR}"/completion/completions/_^*.zwc*; do zbuild "${file}"; done
