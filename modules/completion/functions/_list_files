@@ -8,19 +8,25 @@
 # Sets array listfiles to the display strings and the array
 # listopts appropriately to be added to the compadd command line.
 #
-# Replaces upstream's ls(1)-style layout with a fixed-width name column
-# followed by mode, size and mtime.  Everything down to the zmodload
-# below is upstream _list_files; only the rendering differs.
+# Replaces upstream's ls(1)-style layout with a name column sized to the
+# names being listed, followed by mode, size and mtime.  Everything down
+# to the zmodload below is upstream _list_files; only the rendering
+# differs.  All widths here are terminal columns, never character
+# counts, so that double-width characters stay aligned.
 
 # extendedglob for the file-list patterns below, multibyte so that the
-# (m) width flag sees characters rather than bytes.  The completion
-# system sets both, but the function should not depend on that.
-setopt localoptions extendedglob multibyte
+# (m) width flag sees characters rather than bytes, noshwordsplit so a
+# name holding a space stays one match.  The completion system gives us
+# all three, but the function should not depend on that.
+setopt localoptions extendedglob multibyte noshwordsplit
 
-# Name column width and the marker for names too long to fit it, both
-# measured in terminal columns rather than characters.
-local -i namewidth=30
-local ellipsis='... '
+# Floor for the name column, and the marker for a name too long to fit
+# it.  The column grows past the floor to fit the names being listed,
+# but never shrinks below it just because they all happen to be short:
+# a column that moved on every completion reads worse than a little
+# empty space.  Both are terminal columns, not character counts.
+local -i minnamewidth=30
+local ellipsis='…'
 
 # Format $1 bytes for display, in REPLY ("0B", "4.9MB").
 _lf_format_size() {
@@ -78,13 +84,47 @@ _lf_colorize() {
 # Longest prefix of $1 fitting in $2 columns, in REPLY.  ${(mr:N:)} is
 # no use here: it keeps a double-width character straddling the
 # boundary, overshooting the field by a column.
-_lf_fit() {
+_lf_fit_head() {
   local -i max=$2
 
   REPLY=$1
   while (( ${(m)#REPLY} > max )); do
     REPLY=${REPLY[1,-2]}
   done
+}
+
+# Longest suffix of $1 fitting in $2 columns, in REPLY.
+_lf_fit_tail() {
+  local -i max=$2
+
+  REPLY=$1
+  while (( ${(m)#REPLY} > max )); do
+    REPLY=${REPLY[2,-1]}
+  done
+}
+
+# Fit $1 into $2 columns by eliding its middle, in REPLY.  The ends of a
+# name carry more than its middle does -- what distinguishes these from
+# each other is the track title, and the extension is back there too.
+# Reads the caller's $ellipsis.
+_lf_elide() {
+  local text=$1 head
+  local -i max=$2 keep
+
+  (( keep = max - ${(m)#ellipsis} ))
+  if (( keep < 2 )); then
+    # No room for both ends; keep the front and drop the marker.
+    _lf_fit_head "$text" $max
+    return
+  fi
+
+  # The head gets the odd column.  Budget the tail against the head we
+  # actually got, which may be a column short of its share if a
+  # double-width character would not fit.
+  _lf_fit_head "$text" $(( (keep + 1) / 2 ))
+  head=$REPLY
+  _lf_fit_tail "$text" $(( keep - ${(m)#head} ))
+  REPLY=$head$ellipsis$REPLY
 }
 
 local dir what elt
@@ -116,6 +156,13 @@ zmodload -F zsh/stat b:zstat 2>/dev/null || return 1
 
 dir=${(Q)${2:+$2/}}
 
+# The gap between a match and what describes it is the completion
+# system's own list-separator (init.zsh sets it); a hardcoded copy here
+# would be a second place to edit.  Its width does not matter: it sits
+# after the name column, so it cannot shift the name column.
+local separator
+zstyle -s ":completion:${curcontext}:" list-separator separator || separator='--'
+
 # Parsed once per invocation rather than once per file.  A hash lookup
 # also keeps odd filename extensions out of the pattern matcher, where
 # a name like "a.[" used to be an invalid pattern.
@@ -131,16 +178,24 @@ done
 # `foo!bar.txt` beside a buffer reading `foo\!bar.txt` invites retyping a
 # line that history expansion then eats, and the same goes for a name
 # holding a space, a quote or a glob character.
-local -a names matches
-names=( ${(PQ)1} )
-matches=( ${(P)1} )
+# Dereference $1 in the same statement that declares the locals: the
+# assignment is expanded before `local` creates the parameter, so this
+# still works when the caller's array shares a name with one of ours.
+# _path_files passes bare `tmp1`, `tmp2`, `tmpdisp` and even `i`, and a
+# plain `local -a names; names=( ${(P)1} )` would read back empty.
+local -a names=( ${(PQ)1} ) matches=( ${(P)1} )
 
 local -A stat
-local REPLY file name mark attrs size
-local -i i width pad
+local REPLY file name attrs size
+local -i idx width pad
 
-for (( i = 1; i <= $#names; i++ )); do
-  file=$dir$names[i]
+# First pass: stat every match and build its attribute columns, so that
+# the name column can then be sized to the names actually being listed.
+local -a rowfiles rownames rowattrs
+local -i maxname=0 maxattrs=0
+
+for (( idx = 1; idx <= $#names; idx++ )); do
+  file=$dir$names[idx]
 
   # %e is already padded to two columns; (C) below fixes locales whose
   # %b is lower case.  Fall back to lstat so a dangling symlink still
@@ -148,34 +203,72 @@ for (( i = 1; i <= $#names; i++ )); do
   if ! zstat -s -H stat -F "%e %b %H:%M" - "$file" 2>/dev/null &&
      ! zstat -s -L -H stat -F "%e %b %H:%M" - "$file" 2>/dev/null
   then
-    listfiles+=("$dir$matches[i]")
+    # Nothing to describe it with, so it goes out on its own.  An empty
+    # attribute string is the marker for that in the second pass.
+    rowfiles+=("$file")
+    rownames+=("$dir$matches[idx]")
+    rowattrs+=("")
     continue
   fi
 
   _lf_format_size $stat[size]
   size=$REPLY
-  attrs="│ ${(l:10:)stat[mode]}  ${(l:12:)size}   ${(C)stat[mtime]}"
 
   # Control characters would wreck the column arithmetic -- a tab
   # measures one column but moves the cursor to the next tab stop -- so
   # show them as '?' the way ls(1) does on a terminal.
-  name=${matches[i]//[[:cntrl:]]/\?}
-  width=${(m)#name}
+  name=${matches[idx]//[[:cntrl:]]/\?}
+  # The leading space is the gutter, so the widest name still gets one
+  # column of air before the separator.
+  attrs=" $separator ${(l:10:)stat[mode]}  ${(l:12:)size}   ${(C)stat[mtime]}"
 
-  if (( width > namewidth )); then
-    _lf_fit "$name" $(( namewidth - ${(m)#ellipsis} ))
-    name=$REPLY
-    width=${(m)#name}
-    mark=$ellipsis
-  else
-    mark=
+  rowfiles+=("$file")
+  rownames+=("$name")
+  rowattrs+=("$attrs")
+
+  (( width = ${(m)#name} ))
+  (( width > maxname )) && (( maxname = width ))
+  (( width = ${(m)#attrs} ))
+  (( width > maxattrs )) && (( maxattrs = width ))
+done
+
+# The name column is the wider of that floor and the widest name, but
+# never wide enough to push the row off the right edge of the terminal.
+# maxattrs is measured rather than assumed so that editing the row
+# format above cannot silently desynchronise this.
+# Leave the rightmost column unused: a row that exactly fills the
+# terminal can cost a phantom wrapped line on some of them.
+local -i avail namewidth=$(( maxname > minnamewidth ? maxname : minnamewidth ))
+(( avail = (COLUMNS > 0 ? COLUMNS : 80) - maxattrs - 1 ))
+(( namewidth > avail )) && (( namewidth = avail ))
+# Keep the arithmetic below non-negative.  A wrapped row would throw
+# every column out, so a cramped name column always beats spilling;
+# only a terminal narrower than the attributes alone can still spill,
+# and nothing can be done about that short of dropping a column.
+(( namewidth < 1 )) && (( namewidth = 1 ))
+
+# Second pass: fit each name to that column and colour it.
+for (( idx = 1; idx <= $#rownames; idx++ )); do
+  name=$rownames[idx]
+  attrs=$rowattrs[idx]
+
+  if [[ -z $attrs ]]; then
+    listfiles+=("$name")
+    continue
   fi
 
-  _lf_colorize "$file" "$name"
+  width=${(m)#name}
+  if (( width > namewidth )); then
+    _lf_elide "$name" $namewidth
+    name=$REPLY
+    width=${(m)#name}
+  fi
+
+  _lf_colorize "$rowfiles[idx]" "$name"
   # Pad outside the escape: the escape bytes are not columns, and a
   # background colour must not bleed across the gap.
-  (( pad = namewidth - width - ${(m)#mark} ))
-  listfiles+=("${REPLY}${mark}${(ml:pad:)}${attrs}")
+  (( pad = namewidth - width ))
+  listfiles+=("${REPLY}${(ml:pad:)}${attrs}")
 done
 
 (( ${#listfiles} )) && listopts=(-d listfiles -l -o match)
