@@ -1,102 +1,183 @@
 #autoload
 
-local -a _lf_units
-_lf_units=("B" "KB" "MB" "GB" "TB" "PB")
+# Helper function for _path_files to handle the file-list style.
+#
+# arguments:
+#  name of parameter containing file matches
+#  directory prefix
+# Sets array listfiles to the display strings and the array
+# listopts appropriately to be added to the compadd command line.
+#
+# Replaces upstream's ls(1)-style layout with a fixed-width name column
+# followed by mode, size and mtime.  Everything down to the zmodload
+# below is upstream _list_files; only the rendering differs.
 
+# extendedglob for the file-list patterns below, multibyte so that the
+# (m) width flag sees characters rather than bytes.  The completion
+# system sets both, but the function should not depend on that.
+setopt localoptions extendedglob multibyte
+
+# Name column width and the marker for names too long to fit it, both
+# measured in terminal columns rather than characters.
+local -i namewidth=30
+local ellipsis='... '
+
+# Format $1 bytes for display, in REPLY ("0B", "4.9MB").
 _lf_format_size() {
-  local -i b=$(( $1 * 10 )) u=1
-  while (( b >= 10240 && u < ${#_lf_units} )); do
-    (( b /= 1024 ))
-    (( u++ ))
+  local -a units=(B KB MB GB TB PB)
+  local -i bytes=$1 unit=1 divisor=1 tenths
+
+  while (( bytes >= 1024 * divisor && unit < $#units )); do
+    (( divisor *= 1024, unit++ ))
   done
-  if (( u == 1 )); then
-    REPLY="$(( b / 10 ))${_lf_units[$u]}"
+
+  if (( unit == 1 )); then
+    REPLY="${bytes}B"
   else
-    REPLY="$(( b / 10 )).$(( b % 10 ))${_lf_units[$u]}"
+    # Scale by ten to keep one decimal place; the division truncates.
+    (( tenths = bytes * 10 / divisor ))
+    REPLY="$(( tenths / 10 )).$(( tenths % 10 ))${units[unit]}"
   fi
 }
 
+# Wrap display text $2 in the LS_COLORS escape for the file at path $1,
+# in REPLY.  Reads the caller's $lscolors.
 _lf_colorize() {
-  local file="$1" dir="$2" ftype color_code
-  if [[ -z "$LS_COLORS" ]]; then
-    REPLY="$file"
+  # Not named `path`: that one is tied to $PATH, so assigning a filename
+  # to it rewrites the command search path for the rest of the call.
+  local file=$1 text=$2 key code
+
+  if (( ! $#lscolors )); then
+    REPLY=$text
     return
   fi
-  if [[ -d "$dir$file" ]]; then
-    ftype="di"
-  elif [[ -L "$dir$file" ]]; then
-    ftype="ln"
-  elif [[ -p "$dir$file" ]]; then
-    ftype="pi"
-  elif [[ -S "$dir$file" ]]; then
-    ftype="so"
-  elif [[ -x "$dir$file" ]]; then
-    ftype="ex"
-  elif [[ -n "${file:e}" ]]; then
-    ftype="*.${file:e}"
-  fi
-  if [[ -n "$ftype" ]]; then
-    color_code="${${(s.:.)LS_COLORS}[(r)${ftype}=*]#${ftype}=}"
-  fi
-  if [[ -n "$color_code" ]]; then
-    REPLY=$'\e['"${color_code}m${file}"$'\e[0m'
+
+  if [[ -d $file ]]; then
+    key=di
+  elif [[ -L $file ]]; then
+    key=ln
+  elif [[ -p $file ]]; then
+    key=pi
+  elif [[ -S $file ]]; then
+    key=so
+  elif [[ -x $file ]]; then
+    key=ex
   else
-    REPLY="$file"
+    # No extension yields the key "*.", which simply never matches.
+    key="*.${file:e}"
+  fi
+
+  code=$lscolors[$key]
+  if [[ -n $code ]]; then
+    REPLY=$'\e['"${code}m${text}"$'\e[0m'
+  else
+    REPLY=$text
   fi
 }
 
-local f dir what elt
+# Longest prefix of $1 fitting in $2 columns, in REPLY.  ${(mr:N:)} is
+# no use here: it keeps a double-width character straddling the
+# boundary, overshooting the field by a column.
+_lf_fit() {
+  local -i max=$2
+
+  REPLY=$1
+  while (( ${(m)#REPLY} > max )); do
+    REPLY=${REPLY[1,-2]}
+  done
+}
+
+local dir what elt
 local -a stylevals
 local -i ok
+
 listfiles=()
 listopts=()
+
 zstyle -a ":completion:${curcontext}:" file-list stylevals || return 1
+
 case $WIDGETSTYLE in
   (*complete*) what=insert ;;
   (*) what=list ;;
 esac
+
 for elt in $stylevals; do
   case $elt in
+    # use long format if no more than the given number of matches
     (*($what|all|true|1|yes)*=<->) (( ${(P)#1} <= ${elt##*=} )) && (( ok = 1 )); break ;;
+    # always use long format
     ([^=]#($what|all|true|1|yes)[^=]#) (( ok = 1 )); break ;;
   esac
 done
+
 (( ok )) || return 1
+
 zmodload -F zsh/stat b:zstat 2>/dev/null || return 1
 
-dir=${2:+$2/}
-dir=${(Q)dir}
+dir=${(Q)${2:+$2/}}
+
+# Parsed once per invocation rather than once per file.  A hash lookup
+# also keeps odd filename extensions out of the pattern matcher, where
+# a name like "a.[" used to be an invalid pattern.
+local -A lscolors
+local entry
+for entry in ${(s.:.)LS_COLORS}; do
+  [[ $entry == ?*=* ]] && lscolors[${entry%%=*}]=${entry#*=}
+done
+
+# _path_files hands the matches over already quoted - it completes them
+# with `compadd -Q` - so ${(P)1} is what lands in the buffer and ${(PQ)1}
+# is the name on disk.  The row has to show the quoted form: a list of
+# `foo!bar.txt` beside a buffer reading `foo\!bar.txt` invites retyping a
+# line that history expansion then eats, and the same goes for a name
+# holding a space, a quote or a glob character.
+local -a names matches
+names=( ${(PQ)1} )
+matches=( ${(P)1} )
 
 local -A stat
-local REPLY size mtime attrs colored padded
-local -a mparts
+local REPLY file name mark attrs size
+local -i i width pad
 
-for f in ${(PQ)1}; do
-  if [[ ! -e "$dir$f" ]]; then
-    listfiles+=("$dir$f")
+for (( i = 1; i <= $#names; i++ )); do
+  file=$dir$names[i]
+
+  # %e is already padded to two columns; (C) below fixes locales whose
+  # %b is lower case.  Fall back to lstat so a dangling symlink still
+  # gets a row, and bail out rather than render a stale $stat.
+  if ! zstat -s -H stat -F "%e %b %H:%M" - "$file" 2>/dev/null &&
+     ! zstat -s -L -H stat -F "%e %b %H:%M" - "$file" 2>/dev/null
+  then
+    listfiles+=("$dir$matches[i]")
     continue
   fi
 
-  zstat -s -H stat -F "%b %e %H:%M" - "$dir$f" >/dev/null 2>&1
-
   _lf_format_size $stat[size]
   size=$REPLY
+  attrs="│ ${(l:10:)stat[mode]}  ${(l:12:)size}   ${(C)stat[mtime]}"
 
-  mparts=( ${(s: :)stat[mtime]} )
-  mtime="${(l:2:)mparts[2]} ${(C)mparts[1]} $mparts[3]"
-  attrs="│ ${(l:10:)stat[mode]}  ${(l:12:)size}   $mtime"
+  # Control characters would wreck the column arithmetic -- a tab
+  # measures one column but moves the cursor to the next tab stop -- so
+  # show them as '?' the way ls(1) does on a terminal.
+  name=${matches[i]//[[:cntrl:]]/\?}
+  width=${(m)#name}
 
-  _lf_colorize "$f" "$dir"
-  colored=$REPLY
-
-  if (( ${#f} >= 30 )); then
-    padded="${colored[1,$((26 + ${#colored} - ${#f}))]}"$'\e[0m... '
+  if (( width > namewidth )); then
+    _lf_fit "$name" $(( namewidth - ${(m)#ellipsis} ))
+    name=$REPLY
+    width=${(m)#name}
+    mark=$ellipsis
   else
-    padded="${(r(30)( ))colored}"
+    mark=
   fi
 
-  listfiles+=("${padded}${attrs}")
+  _lf_colorize "$file" "$name"
+  # Pad outside the escape: the escape bytes are not columns, and a
+  # background colour must not bleed across the gap.
+  (( pad = namewidth - width - ${(m)#mark} ))
+  listfiles+=("${REPLY}${mark}${(ml:pad:)}${attrs}")
 done
 
 (( ${#listfiles} )) && listopts=(-d listfiles -l -o match)
+
 return 0
