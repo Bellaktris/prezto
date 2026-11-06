@@ -1,0 +1,109 @@
+#compdef vpnchain
+
+# Completion for vpnchain (see main/bin/vpnchain in the dotfiles repo).
+#
+# Deliberately static.  Everything offered here is the script's own vocabulary,
+# which changes when the script does and not otherwise, so nothing dials the
+# proxy, reads the generated config or asks launchd anything.  auto-fu runs
+# completion on every keystroke; a completion that waited on the chain would
+# make the shell wait on it too, for words five characters long.
+
+local curcontext="$curcontext" state line ret=1
+typeset -A opt_args
+
+_vpnchain_commands () {
+	local -a cmds=(
+		'start:load the sing-box agent'
+		'stop:unload it, and the status server with it'
+		'restart:reload it'
+		'browser:quit and relaunch a browser pinned to the chain'
+		'i2p:run i2pd for as long as you want .i2p names'
+		'config:write the sing-box config from the env file'
+		'blocklist:fetch the tracker lists and install the rule-set'
+	)
+	_describe -t commands 'vpnchain command' cmds
+}
+
+# The two concealment postures. Same peer and same latency either way, so the
+# descriptions say what is on the wire rather than which is faster.
+_vpnchain_modes () {
+	local -a modes=(
+		'chained:endpoint dials through the upstream - only ordinary TLS leaves'
+		'direct:endpoint dials its peer itself - plainly a VPN on the wire'
+	)
+	_describe -t modes 'mode' modes
+}
+
+_arguments -C \
+	'1: :->command' \
+	'*:: :->argument' && ret=0
+
+case $state in
+	(command)
+		_vpnchain_commands && ret=0
+		;;
+
+	(argument)
+		case $words[1] in
+			(start|restart)
+				# The mode is positional and there is only one of them.
+				(( CURRENT == 2 )) && { _vpnchain_modes && ret=0 }
+				;;
+
+			(browser)
+				# 'incognito' selects a different browser rather than setting
+				# a flag on the pinned one, so it does not combine with the
+				# two that do - once either kind is on the line, only that
+				# kind is still worth offering.
+				local -a kinds=(
+					'incognito:launch Mullvad Browser on the upstream exit'
+					'upstream:the same verb, named for the exit instead'
+				)
+				local -a flags=()
+				(( ${words[(I)with-webrtc]} )) ||
+					flags+=( 'with-webrtc:relax the WebRTC policy for this launch' )
+				(( ${words[(I)with-cookies]} )) ||
+					flags+=( 'with-cookies:allow third-party cookies for this launch' )
+
+				if (( ${words[(I)(incognito|upstream)]} )); then
+					# Nothing else applies to that browser: its proxy, profile
+					# and search engine come from the env file.
+					_message 'no further arguments'
+				else
+					(( $#flags )) && { _describe -t flags 'flag' flags && ret=0 }
+					# Only where it could still be the whole command, since it
+					# cannot follow a flag.
+					(( CURRENT == 2 )) &&
+						{ _describe -t browsers 'other browser' kinds && ret=0 }
+				fi
+				;;
+
+			(i2p)
+				(( CURRENT == 2 )) || return ret
+				local -a sub=(
+					'start:start i2pd and route .i2p to it'
+					'stop:stop it'
+					'status:whether it is running, listening, and how many routers it knows'
+				)
+				_describe -t subcommands 'i2p command' sub && ret=0
+				;;
+
+			(config)
+				(( CURRENT == 2 )) || return ret
+				local -a sub=(
+					'check:compare the live config against the env file, writing nothing'
+				)
+				_describe -t subcommands 'config command' sub && ret=0
+				;;
+
+			(stop|blocklist)
+				# Neither takes an argument. Said out loud rather than left
+				# to fall through, which lands on file completion and offers
+				# the working directory to a verb that cannot use it.
+				_message 'no further arguments'
+				;;
+		esac
+		;;
+esac
+
+return ret
