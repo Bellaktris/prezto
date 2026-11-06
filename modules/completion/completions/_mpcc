@@ -1,0 +1,206 @@
+#compdef mpcc
+
+# Completion for mpcc (see main/bin/mpcc in the dotfiles repo).
+#
+# Song titles and artist names come from mpd.  auto-fu runs completion on every
+# keystroke, so those two lists are cached under $TMPDIR and refreshed only
+# when mpd rewrites its database file.  The queue is never cached: it changes
+# constantly and one mpc call costs about 3 ms.
+
+local curcontext="$curcontext" state line
+typeset -A opt_args
+
+_mpcc_cache () {
+	local what="$1"
+	local dir="${TMPDIR:-/tmp}/mpcc-completion-$UID"
+	[[ -d $dir ]] || mkdir -p -m 700 -- $dir 2>/dev/null || return 1
+	local file="$dir/$what"
+	local db="${XDG_CONFIG_HOME:-$HOME/.config}/mpd/database"
+
+	if ! { [[ -s $file && -f $db ]] && [[ ! $db -nt $file ]] }; then
+		case $what in
+			(artists) mpc list artist 2>/dev/null >| $file ;;
+			(titles)  mpc list title  2>/dev/null >| $file ;;
+		esac
+	fi
+	[[ -s $file ]] || return 1
+	print -r -- $file
+}
+
+_mpcc_titles () {
+	local file; file=$(_mpcc_cache titles) || return 1
+	local -a items; items=( ${(f)"$(<$file)"} )
+	_wanted songs expl 'song' compadd -a items
+}
+
+_mpcc_artists () {
+	local file; file=$(_mpcc_cache artists) || return 1
+	local -a items; items=( ${(f)"$(<$file)"} )
+	_wanted artists expl 'artist' compadd -a items
+}
+
+# Queue positions, described by what is at them.
+_mpcc_queue () {
+	local -a q
+	q=( ${(f)"$(mpc -f '%position%:%artist% — %title%' playlist 2>/dev/null)"} )
+	(( $#q )) || return 1
+	_describe -t queue 'queue position' q
+}
+
+_mpcc_modes () {
+	local -a modes=(
+		'artist:choose from the artist list and take everything they have'
+		'all:the whole library, without prompting'
+	)
+	_describe -t modes 'mode' modes
+}
+
+_mpcc_picker () {
+	local -a browse=( '-:open the fzf picker instead of skipping' )
+	_describe -t picker 'picker' browse
+}
+
+_mpcc_commands () {
+	local -a cmds=(
+		'status:status, the up-next block and the queue'
+		'list:status, with a given number of queue lines'
+		'sched:show just the up-next block'
+		'then:schedule after everything already scheduled'
+		'next:skip to the next song, or schedule a song to play next'
+		'push:schedule a song that is already in the queue'
+		'add:append to the far end of the queue, unscheduled'
+		'play:resume, play a position, or pick from the queue'
+		'prev:go back to the previous song'
+		'toggle:play or pause'
+		'pause:pause'
+		'stop:stop playback'
+		'shuffle:shuffle the queue'
+		'clear:empty the queue'
+		'remove:drop songs from the queue'
+		'help:show mpcc usage'
+	)
+	# Every one of these has to report whether it actually added a match: a
+	# completer that matched but returns non-zero makes _main_complete carry on
+	# down the chain (_opt_file_fallback -> ... -> _approximate), which then
+	# offers spelling corrections on top of a perfectly good exact match.
+	local -i ret=1
+	_describe -t commands 'mpcc command' cmds && ret=0
+	# Anything mpcc does not define is handed straight to mpc.  Pass the bare
+	# names along so the same command is not offered twice.
+	_mpcc_mpc_commands ${cmds%%:*} && ret=0
+	return ret
+}
+
+# mpc's own commands, minus the ones mpcc defines itself.
+#
+# Parsed from the installed mpc's help rather than delegated to zsh's _mpc:
+# _mpc describes its commands under the same `commands` tag this function
+# already used, and with group-name '' the two collapse into one group, which
+# renders an empty "mpcc command" header and resolves every shared name
+# (add, status, stop, shuffle, ...) to mpc's description instead of mpcc's.
+#
+# Cached beside the library lists, keyed on the mpc binary.  Commands whose
+# help line separates the description by a single space (only `sticker` today)
+# come through without one.
+_mpcc_mpc_commands () {
+	local -a exclude=( "$@" )
+	local dir="${TMPDIR:-/tmp}/mpcc-completion-$UID"
+	[[ -d $dir ]] || mkdir -p -m 700 -- $dir 2>/dev/null || return 1
+	local file="$dir/mpc-commands"
+	local bin=${commands[mpc]}
+
+	if ! { [[ -s $file && -n $bin ]] && [[ ! $bin -nt $file ]] }; then
+		# The description is the last column.  Two spaces before it is the
+		# alignment mpc uses; one space is the fallback for the lines it did
+		# not pad (`sticker`).  Argument specs never contain a space followed
+		# by a capital, so neither rule can bite into them.
+		mpc help 2>/dev/null | awk '
+			/^  mpc [a-z]/ {
+				cmd = $2
+				if (!match($0, /  [A-Z]/)) match($0, / [A-Z]/)
+				if (RSTART) {
+					desc = substr($0, RSTART)
+					gsub(/^ +| +$/, "", desc)
+					print cmd ":" desc
+				} else {
+					print cmd
+				}
+			}' >| $file
+	fi
+	[[ -s $file ]] || return 1
+
+	local -a all rest
+	all=( ${(f)"$(<$file)"} )
+	if (( $#exclude )); then
+		# ${~pat} is required: text that arrives by expansion is matched
+		# literally, so the alternation has to be made pattern-active again.
+		local pat="(${(j:|:)exclude})(|:*)"
+		rest=( ${all:#${~pat}} )
+	else
+		rest=( $all )
+	fi
+	(( $#rest )) || return 1
+	_describe -t mpc-commands 'mpc command' rest
+}
+
+# Complete the *arguments* of a passthrough command with the completion zsh
+# ships for mpc, as if the user had typed "mpc ...".  _arguments has already
+# shifted $words to the subcommand, so mpc goes back on the front.
+#
+# Command names are not delegated: see _mpcc_mpc_commands for why.
+#
+# $words and $CURRENT are shadowed rather than assigned, so the caller's view
+# of the command line survives _mpc rewriting them.
+_mpcc_delegate () {
+	(( $+functions[_mpc] )) || autoload -Uz _mpc 2>/dev/null || return 1
+	local -a words=( mpc "${(@)words}" )
+	local -i CURRENT=$(( CURRENT + 1 ))
+	_mpc
+}
+
+local -i ret=1
+
+_arguments -C \
+	'1: :->command' \
+	'*:: :->argument' && ret=0
+
+case $state in
+	(command)
+		_mpcc_commands && ret=0
+		;;
+	(argument)
+		case $words[1] in
+			(then|add|insert|next)
+				if [[ $words[2] == artist || $words[3] == artist ]]; then
+					# "next - artist <TAB>" puts the picker flag in between.
+					_mpcc_artists && ret=0
+				else
+					local -a alts=(
+						'modes:mode:_mpcc_modes'
+						'songs:song:_mpcc_titles'
+					)
+					# Only next is overloaded: bare it skips a song, so it
+					# needs a way to ask for the picker explicitly.
+					[[ $words[1] == next && $CURRENT == 2 ]] &&
+						alts=( 'picker:picker:_mpcc_picker' $alts )
+					_alternative $alts && ret=0
+				fi
+				;;
+			(push|remove|rm|play)
+				_mpcc_queue && ret=0
+				;;
+			(list)
+				_message 'number of queue lines to show'
+				;;
+			(status|sched|scheduled|prev|toggle|pause|stop|shuffle|clear|help)
+				# Nothing to complete; ret stays 1 so the chain may still try.
+				;;
+			(*)
+				# Passed through to mpc, so let mpc's own completion handle it.
+				_mpcc_delegate && ret=0
+				;;
+		esac
+		;;
+esac
+
+return ret
