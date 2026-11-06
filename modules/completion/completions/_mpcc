@@ -33,12 +33,6 @@ _mpcc_titles () {
 	_wanted songs expl 'song' compadd -a items
 }
 
-_mpcc_artists () {
-	local file; file=$(_mpcc_cache artists) || return 1
-	local -a items; items=( ${(f)"$(<$file)"} )
-	_wanted artists expl 'artist' compadd -a items
-}
-
 # Queue positions, described by what is at them.
 _mpcc_queue () {
 	local -a q
@@ -47,12 +41,43 @@ _mpcc_queue () {
 	_describe -t queue 'queue position' q
 }
 
-_mpcc_modes () {
-	local -a modes=(
-		'artist:choose from the artist list and take everything they have'
+# The group names mpcc accepts before a query, and the mpd tag each selects.
+# Kept in step with choose() in main/bin/mpcc.
+_mpcc_group_tag () {
+	case ${(L)1} in
+		(lang|language) REPLY=grouping ;;
+		(artist|album|albumartist|genre|mood|grouping|composer|performer|label|comment|date)
+			REPLY=${(L)1} ;;
+		(*) return 1 ;;
+	esac
+}
+
+_mpcc_groups () {
+	local -a groups=(
+		'artist:every song by an artist'
+		'album:every song on an album'
+		'albumartist:every song by an album artist'
+		'genre:every song in a genre'
+		'mood:every song with a mood'
+		'lang:every song in a language (mpd grouping)'
+		'composer:every song by a composer'
+		'performer:every song with a performer'
+		'label:every song on a label'
+		'comment:every song with a comment'
+		'date:every song from a date'
 		'all:the whole library, without prompting'
+		"expr:an mpd filter expression, e.g. (grouping != 'en')"
 	)
-	_describe -t modes 'mode' modes
+	_describe -t groups 'group' groups
+}
+
+# The values a tag actually has, straight from mpd - so an empty genre list
+# means nothing is tagged yet rather than that the group is unsupported.
+_mpcc_tag_values () {
+	local -a vals
+	vals=( ${(f)"$(mpc list $1 2>/dev/null)"} )
+	(( $#vals )) || return 1
+	_wanted values expl "$1" compadd -a vals
 }
 
 _mpcc_picker () {
@@ -171,12 +196,21 @@ case $state in
 	(argument)
 		case $words[1] in
 			(then|add|insert|next)
-				if [[ $words[2] == artist || $words[3] == artist ]]; then
-					# "next - artist <TAB>" puts the picker flag in between.
-					_mpcc_artists && ret=0
+				# A group name may be the first word or, for "next - ...",
+				# the second.
+				local tag= word=
+				for word in "${(@)words[2,3]}"; do
+					_mpcc_group_tag $word && { tag=$REPLY; break }
+				done
+				if [[ -n $tag ]]; then
+					_mpcc_tag_values $tag && ret=0
+				elif [[ ${(L)words[2]} == expr || ${(L)words[3]} == expr ]]; then
+					_message "mpd filter expression, e.g. (grouping != 'en')"
+				elif [[ ${(L)words[2]} == all || ${(L)words[3]} == all ]]; then
+					: # nothing follows "all"
 				else
 					local -a alts=(
-						'modes:mode:_mpcc_modes'
+						'groups:group:_mpcc_groups'
 						'songs:song:_mpcc_titles'
 					)
 					# Only next is overloaded: bare it skips a song, so it
