@@ -33,12 +33,60 @@ _mpcc_titles () {
 	_wanted songs expl 'song' compadd -a items
 }
 
-# Queue positions, described by what is at them.
+# The queue twice over: as positions described by what is at them, and as the
+# song names themselves.
+#
+# Both, because every queue verb takes either - "play 12" and "play training
+# season" both work, the second going to the picker as its query - and a list
+# of bare numbers cannot be completed by typing a title, which is the part
+# anyone actually remembers.
 _mpcc_queue () {
-	local -a q
-	q=( ${(f)"$(mpc -f '%position%:%artist% — %title%' playlist 2>/dev/null)"} )
-	(( $#q )) || return 1
-	_describe -t queue 'queue position' q
+	local tab=$'\t'
+	local -a rows
+	rows=( ${(f)"$(mpc -f "%position%${tab}%artist% — %title%" playlist 2>/dev/null)"} )
+	(( $#rows )) || return 1
+
+	local -i ret=1
+
+	# Positions are numeric, so nothing in them can be taken for the colon that
+	# separates a _describe pair.
+	local -a positions=( ${rows/$tab/:} )
+	_describe -t queue 'queue position' positions && ret=0
+
+	# One match per distinct song, however many times the queue holds it: the
+	# copies differ only by position, and the positions are already offered
+	# above.  Where a song is queued more than once the display string says
+	# where, so that it does not read as the completion listing it twice.
+	local -A where
+	local -a songs disp
+	local row name
+	for row in $rows; do
+		name=${row#*$tab}
+		if (( $+where[$name] )); then
+			where[$name]+=", ${row%%$tab*}"
+			continue
+		fi
+		where[$name]=${row%%$tab*}
+		songs+=( $name )
+	done
+	for name in $songs; do
+		if [[ $where[$name] == *,* ]]; then
+			disp+=( "$name  (at $where[$name])" )
+		else
+			disp+=( "$name" )
+		fi
+	done
+	# compadd -d rather than _describe: a title may contain a colon, which
+	# _describe would read as the start of its description.
+	#
+	# -M because the match is "artist — title" while what gets typed is
+	# usually the title alone, and the default matcher is anchored at the
+	# start.  Anything on either side of the typed text, so "Broken<TAB>"
+	# finds "Billie Eilish — Broken Beautiful".
+	_wanted queue-songs expl 'song in the queue' \
+		compadd -M 'l:|=* r:|=*' -d disp -a songs && ret=0
+
+	return ret
 }
 
 # The group names mpcc accepts before a query, and the mpd tag each selects.
