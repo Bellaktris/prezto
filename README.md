@@ -1,136 +1,137 @@
-Prezto — Instantly Awesome Zsh
-==============================
+Bellaktris/prezto
+=================
 
-Prezto is the configuration framework for [Zsh][1]; it enriches the command line
-interface environment with sane defaults, aliases, functions, auto completion,
-and prompt themes.
+A personal fork of [Prezto][1], the Zsh configuration framework by Sorin
+Ionescu. It is the `zsh/` submodule of [Bellaktris/.files][2] and is laid out
+to run from there, not from `~/.zprezto`. Upstream changes are merged in from
+time to time; everything that differs from upstream is described below.
+
+For the framework itself - how modules load, what each upstream module does -
+see the [upstream README][1] and the README in each `modules/*` directory.
 
 Installation
 ------------
 
-Prezto will work with any recent release of Zsh, but the minimum required
-version is 4.3.11.
-
-  1. Launch Zsh:
-
-     ```console
-     zsh
-     ```
-
-  2. Clone the repository:
-
-     ```console
-     git clone --recursive https://github.com/sorin-ionescu/prezto.git "${ZDOTDIR:-$HOME}/.zprezto"
-     ```
-
-  3. Create a new Zsh configuration by copying the Zsh configuration files
-     provided:
-
-     ```sh
-     setopt EXTENDED_GLOB
-     for rcfile in "${ZDOTDIR:-$HOME}"/.zprezto/runcoms/^README.md(.N); do
-       ln -s "$rcfile" "${ZDOTDIR:-$HOME}/.${rcfile:t}"
-     done
-     ```
-
-     Note: If you already have any of the given configuration files, `ln` will
-     cause error. In simple cases you can load prezto by adding the line
-     `source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"` to the bottom of your
-     `.zshrc` and keep the rest of your Zsh configuration intact. For more
-     complicated setups, it is recommended that you back up your original
-     configs and replace them with the provided prezto runcoms.
-
-  4. Set Zsh as your default shell:
-
-     ```console
-     chsh -s /bin/zsh
-     ```
-
-  5. Open a new Zsh terminal window or tab.
-
-### Troubleshooting
-
-If you are not able to find certain commands after switching to *Prezto*,
-modify the `PATH` variable in *~/.zprofile* then open a new Zsh terminal
-window or tab.
-
-Updating
---------
-
-Run `zprezto-update` to automatically check if there is an update to zprezto.
-If there are no file conflicts, zprezto and its submodules will be
-automatically updated. If there are conflicts you will be instructed to go into
-the `$ZPREZTODIR` directory and resolve them yourself.
-
-To pull the latest changes and update submodules manually:
+As part of the dotfiles, which links `~/.zshenv` and does the rest:
 
 ```console
-cd $ZPREZTODIR
-git pull
-git submodule update --init --recursive
+git clone --recursive https://github.com/Bellaktris/.files ~/.files
+~/.files/install
 ```
 
-Usage
------
+On its own, anywhere:
 
-Prezto has many features disabled by default. Read the source code and
-accompanying README files to learn of what is available.
+```console
+git clone --recursive https://github.com/Bellaktris/prezto ~/.zsh
+ln -s ~/.zsh/runcoms/.zshenv ~/.zshenv
+zsh -c 'source ~/.zsh/runcoms/.zlogin'
+chsh -s "$(command -v zsh)"
+```
+
+Requires a recent Zsh (5.x). `cmake` and a C++ compiler are needed for the
+tmux status widget; `fzf` is installed by `.zlogin` if it is missing.
+
+Layout
+------
+
+Unlike upstream, nothing but `~/.zshenv` lives in `$HOME`. `runcoms/.zshenv`
+points `ZDOTDIR` at its own directory:
+
+```sh
+export ZDOTDIR=${${(%):-%N}:A:h}
+```
+
+so Zsh reads `.zprofile`, `.zshrc` and `.zlogin` straight from `runcoms/`, and
+`.zshrc` sources `runcoms/.zpreztorc` and then `init.zsh`.
+
+| file                   | what it does                                             |
+| ---------------------- | -------------------------------------------------------- |
+| `runcoms/.zshenv`      | sets `ZDOTDIR`; sources `.zprofile` in non-login shells   |
+| `runcoms/.zprofile`    | locale, `path`, `TMPDIR`, editor, pager, Homebrew prefix |
+| `runcoms/.zpreztorc`   | which modules load, and their settings                   |
+| `runcoms/.zshrc`       | loads Prezto, vi-mode tweaks, cached prompt at startup   |
+| `runcoms/.zlogin`      | compiles, builds and installs - see below                |
+
+`.zprofile` expects the Python startup file at `~/.files/python/.pythonrc`, so
+outside the dotfiles that line wants adjusting.
+
+### .zlogin
+
+Runs once per login shell, as a disowned background job so it never delays the
+prompt:
+
+- `zrecompile`s the runcoms, `init.zsh`, every module's `init.zsh` and
+  `functions/`, the completion functions, auto-fu and zsh-syntax-highlighting,
+  and removes stale `*.zwc.old` files;
+- builds `tmux-mem-cpu-load` into `~/.local/bin` with cmake, the first time;
+- installs `fzf` through brew, apt, dnf or pacman (or a git clone) when it is
+  not on `PATH`.
+
+Re-run it by hand after editing anything under `modules/` or `runcoms/`:
+
+```console
+source ~/.files/zsh/runcoms/.zlogin
+```
+
+### Machine-local overrides
+
+Sourced when present, and never committed:
+
+- `runcoms/.zprofile-local` - from `.zprofile`
+- `runcoms/.zshrc-local` - from `.zshrc`
+
+What differs from upstream
+--------------------------
 
 ### Modules
 
-  1. Browse */modules* to see what is available.
-  2. Load the modules you need in *~/.zpreztorc* then open a new Zsh terminal
-     window or tab.
+Loaded, in order (`runcoms/.zpreztorc`): fbterm, tmux, environment, terminal,
+history, archive, git, syntax-highlighting, editor, directory, spectrum,
+utility, completion, fzf, ssh, prompt. Vi key bindings, the sorin theme, and
+tmux auto-started for local and remote sessions.
 
-### Themes
+Added in this fork:
 
-  1. For a list of themes, type `prompt -l`.
-  2. To preview a theme, type `prompt -p name`.
-  3. Load the theme you like in *~/.zpreztorc* then open a new Zsh terminal
-     window or tab.
+- **fzf** - fzf key bindings and completion, wired into the inline
+  auto-completion so the two do not fight over the line.
+- **fbterm** - framebuffer terminal on Linux consoles, with background images.
 
-     ![sorin theme][2]
-     Note that the 'git' module may be required for special symbols to appear,
-     such as those on the right of the above image. Add `'git'` to the `pmodule`
-     list (under `zstyle ':prezto:load' pmodule \` in your *~/.zpreztorc*) to
-     enable this module.
+Changed substantially:
 
-### External Modules
+- **completion** - inline completion as you type, by a fork of auto-fu
+  (`modules/completion/external-modules/autocompletion`, its own submodule,
+  [Bellaktris/auto-fu][3]; see its readme). Also: a file list that sizes its
+  name column to its content and keeps each match's quoting, a cache guard on
+  `compinit`, `_opt_file_fallback` for `--opt=` specs with no action, and
+  completions for `mpcc`, `vpnchain`, `claude`, `ffprobe`, `mpv`, `hg` and `rm`
+  in `modules/completion/completions/`.
+- **tmux** - status line widgets: `tmux-mem-cpu-load` (built by `.zlogin`) and
+  battery state, plus tmux-yank.
+- **editor** - backslash escapes count as part of a word; Escape in tmux copy
+  mode behaves.
+- **terminal** - `time-report` prints the time, CPU share and peak memory of
+  any command that runs longer than 10 seconds.
 
-  1. By default modules will be loaded from */modules* and */contrib*.
-  2. Additional module directories can be added to the
-     `:prezto:load:pmodule-dirs` setting in *~/.zpreztorc*.
+Throughout, `echo` has been replaced by `printf` and a number of upstream bugs
+fixed; `git log` has the details.
 
-     Note that module names need to be unique or they will cause an error when
-     loading.
+### Submodules
 
-     ```sh
-     zstyle ':prezto:load' pmodule-dirs $HOME/.zprezto-contrib
-     ```
+Several modules vendor their upstream projects under `external/`. Clone with
+`--recursive`, or after a pull:
 
-Customization
--------------
+```console
+git submodule update --init --recursive
+```
 
-The project is managed via [Git][3]. It is highly recommended that you fork this
-project; so, that you can commit your changes and push them to [GitHub][4] to
-not lose them. If you do not know how to use Git, follow this [tutorial][5] and
-bookmark this [reference][6].
-
-Resources
----------
-
-The [Zsh Reference Card][7] and the [zsh-lovers][8] man page are indispensable.
+Changes to auto-fu are committed in its submodule first, then the pointer is
+bumped here, then in the dotfiles.
 
 License
 -------
 
-This project is licensed under the MIT License.
+MIT, as upstream. See the [upstream repository][1] for the original authors.
 
-[1]: http://www.zsh.org
-[2]: http://i.imgur.com/nrGV6pg.png "sorin theme"
-[3]: http://git-scm.com
-[4]: https://github.com
-[5]: http://gitimmersion.com
-[6]: https://git.github.io/git-reference/
-[7]: http://www.bash2zsh.com/zsh_refcard/refcard.pdf
-[8]: http://grml.org/zsh/zsh-lovers.html
+[1]: https://github.com/sorin-ionescu/prezto
+[2]: https://github.com/Bellaktris/.files
+[3]: https://github.com/Bellaktris/auto-fu
