@@ -23,6 +23,7 @@ _vpnchain_commands () {
 		'subscribe:fetch the node list from the subscription'
 		'reload:regenerate the config and restart sing-box alone'
 		'setup:one-time preparation (Linux: the browser policy file, with sudo)'
+		'ssh-reality:a shell on your own node, carried inside its Reality inbound'
 	)
 	_describe -t commands 'vpnchain command' cmds
 }
@@ -98,6 +99,16 @@ case $state in
 					'check:compare the live config against the env file, writing nothing'
 				)
 				_describe -t subcommands 'config command' sub && ret=0
+				;;
+
+			(ssh-reality)
+				# The node's tag, read straight from the file - no proxy is
+				# dialled to list it. The ssh arguments after it are free-form.
+				if (( CURRENT == 2 )); then
+					local own=${XDG_CONFIG_HOME:-$HOME/.config}/vpnchain/own-nodes.json
+					local -a tags=( ${(f)"$(sed -n 's/^ *"tag": *"\([^"]*\)".*/\1/p' $own 2>/dev/null)"} )
+					(( $#tags )) && { _describe -t nodes 'own node' tags && ret=0 }
+				fi
 				;;
 
 			(stop|blocklist|subscribe|reload|setup)
