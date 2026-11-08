@@ -27,11 +27,12 @@ _vpnchain_commands () {
 	_describe -t commands 'vpnchain command' cmds
 }
 
-# The two concealment postures. Same peer and same latency either way, so the
-# descriptions say what is on the wire rather than which is faster.
+# The concealment postures. Same peer either way, so the descriptions say
+# what is on the wire rather than which is faster.
 _vpnchain_modes () {
 	local -a modes=(
-		'chained:endpoint dials through the upstream - only ordinary TLS leaves'
+		'chained:endpoint dials through the nodes whose names ECH hides'
+		'chained-reality:through the Reality node only - for networks that block CDNs'
 		'direct:endpoint dials its peer itself - plainly a VPN on the wire'
 	)
 	_describe -t modes 'mode' modes
