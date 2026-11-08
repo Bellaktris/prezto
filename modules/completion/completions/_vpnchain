@@ -20,6 +20,7 @@ _vpnchain_commands () {
 		'i2p:run i2pd for as long as you want .i2p names'
 		'config:write the sing-box config from the env file'
 		'blocklist:fetch the tracker lists and install the rule-set'
+		'subscribe:fetch the node list from the subscription'
 		'setup:one-time preparation (Linux: the browser policy file, with sudo)'
 	)
 	_describe -t commands 'vpnchain command' cmds
@@ -97,7 +98,7 @@ case $state in
 				_describe -t subcommands 'config command' sub && ret=0
 				;;
 
-			(stop|blocklist|setup)
+			(stop|blocklist|subscribe|setup)
 				# Neither takes an argument. Said out loud rather than left
 				# to fall through, which lands on file completion and offers
 				# the working directory to a verb that cannot use it.
