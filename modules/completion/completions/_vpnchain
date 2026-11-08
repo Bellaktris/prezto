@@ -18,7 +18,7 @@ _vpnchain_commands () {
 		'restart:reload it'
 		'browser:quit and relaunch a browser pinned to the chain'
 		'i2p:run i2pd for as long as you want .i2p names'
-		'config:write the sing-box config from the env file'
+		'config:write (gen) or verify (check) the sing-box config against the env file'
 		'get-blocklist:fetch the tracker lists and the kept-out country lists'
 		'subscribe:fetch the node list from the subscription'
 		'reload:regenerate the config and restart sing-box alone'
@@ -96,6 +96,7 @@ case $state in
 			(config)
 				(( CURRENT == 2 )) || return ret
 				local -a sub=(
+					'gen:write the config from the env file, backing up the live one'
 					'check:compare the live config against the env file, writing nothing'
 				)
 				_describe -t subcommands 'config command' sub && ret=0
