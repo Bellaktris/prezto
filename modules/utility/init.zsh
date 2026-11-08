@@ -70,8 +70,12 @@ alias rm='nocorrect rm'
 (( $+commands[ag] )) \
   && alias ag='nocorrect ag --smart-case'
 
-(( $+commands[bat] )) \
-  && alias cat='nocorrect bat'
+# Debian and Ubuntu install bat as batcat.
+if (( $+commands[bat] )); then
+  alias cat='nocorrect bat'
+elif (( $+commands[batcat] )); then
+  alias bat='batcat' cat='nocorrect batcat'
+fi
 
 # Disable globbing.
 alias wget='noglob wget'
@@ -260,7 +264,10 @@ elif is-termux; then
 else
   alias o='xdg-open'
 
-  if (( $+commands[xclip] )); then
+  if [[ -n $WAYLAND_DISPLAY ]] && (( $+commands[wl-copy] )); then
+    alias pbcopy='wl-copy'
+    alias pbpaste='wl-paste --no-newline'
+  elif (( $+commands[xclip] )); then
     alias pbcopy='xclip -selection clipboard -in'
     alias pbpaste='xclip -selection clipboard -out'
   elif (( $+commands[xsel] )); then

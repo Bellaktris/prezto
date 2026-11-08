@@ -51,15 +51,12 @@
     if (( $+commands[brew] )); then
       brew install fzf 2>/dev/null \
         && "$(brew --prefix)"/opt/fzf/install --key-bindings --completion --no-update-rc 2>/dev/null
-    elif (( $+commands[apt-get] )); then
-      sudo apt-get install -y fzf 2>/dev/null
-    elif (( $+commands[dnf] )); then
-      sudo dnf install -y fzf 2>/dev/null
-    elif (( $+commands[pacman] )); then
-      sudo pacman -S --noconfirm fzf 2>/dev/null
     elif (( $+commands[git] )); then
+      # No sudo from here: this runs disowned with its output discarded, so a
+      # password prompt would stop it for good. The system package is
+      # ~/.files/install's job; this is the fallback that needs no root.
       git clone --depth 1 https://github.com/junegunn/fzf.git $HOME/.fzf \
-        && $HOME/.fzf/install --64 --key-bindings --completion --no-update-rc
+        && $HOME/.fzf/install --bin
     fi
   fi
 

@@ -10,14 +10,41 @@
 local curcontext="$curcontext" state line
 typeset -A opt_args
 
+# mpd's database file, which is what says the cached lists are stale: the
+# db_file of the first mpd.conf found - per-user, then the system one Debian
+# and Ubuntu use - else the per-user default.  Looked up once per shell.
+_mpcc_db () {
+	(( ${+_mpcc_db_file} )) && { REPLY=$_mpcc_db_file; return }
+	local conf line
+	typeset -g _mpcc_db_file="${XDG_CONFIG_HOME:-$HOME/.config}/mpd/database"
+	for conf in "${XDG_CONFIG_HOME:-$HOME/.config}/mpd/mpd.conf" ~/.mpdconf /etc/mpd.conf; do
+		[[ -r $conf ]] || continue
+		for line in ${(f)"$(<$conf)"}; do
+			if [[ $line == [[:space:]]#db_file[[:space:]]##\"*\"* ]]; then
+				line=${line#*\"}
+				_mpcc_db_file=${~line%%\"*}
+				break 2
+			fi
+		done
+	done
+	REPLY=$_mpcc_db_file
+}
+
 _mpcc_cache () {
 	local what="$1"
 	local dir="${TMPDIR:-/tmp}/mpcc-completion-$UID"
 	[[ -d $dir ]] || mkdir -p -m 700 -- $dir 2>/dev/null || return 1
 	local file="$dir/$what"
-	local db="${XDG_CONFIG_HOME:-$HOME/.config}/mpd/database"
+	local REPLY; _mpcc_db
+	local db=$REPLY
 
-	if ! { [[ -s $file && -f $db ]] && [[ ! $db -nt $file ]] }; then
+	# Without a readable database, refresh at most every ten minutes rather
+	# than on every keystroke auto-fu completes on.
+	local -a fresh=( $file(N.ms-600) )
+	if [[ -f $db ]]; then
+		[[ -s $file && ! $db -nt $file ]] && fresh=( $file ) || fresh=()
+	fi
+	if (( ! $#fresh )); then
 		case $what in
 			(artists) mpc list artist 2>/dev/null >| $file ;;
 			(titles)  mpc list title  2>/dev/null >| $file ;;

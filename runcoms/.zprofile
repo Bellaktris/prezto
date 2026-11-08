@@ -1,7 +1,14 @@
 # Language
-export LC_ALL='en_US.UTF-8'
-export LANG="$LC_ALL"
-export LANGUAGE="$LC_ALL"
+# en_US.UTF-8 where it exists, else C.UTF-8, which every current glibc ships:
+# naming a locale that was never generated (minimal installs, containers)
+# leaves the shell in plain C, without multibyte input. LANG rather than
+# LC_ALL, so a desktop's own region settings still apply where they are set.
+if [[ "$OSTYPE" == darwin* ]] || locale -a 2>/dev/null | grep -qix 'en_US.utf-\?8'; then
+  export LANG='en_US.UTF-8'
+else
+  export LANG='C.UTF-8'
+fi
+export LANGUAGE='en_US:en'
 
 
 # Paths
@@ -12,6 +19,9 @@ typeset -gU cdpath fpath mailpath path
 
 # Set the list of directories that Zsh searches for programs.
 path=( $HOME/{,.local/}bin {/usr/local,/usr,}/{sbin,bin} /usr/games )
+
+# Where Ubuntu's snaps and rustup's cargo put their commands.
+path+=( /snap/bin(N/) $HOME/.cargo/bin(N/) )
 
 # Set the list of directories that Zsh searches for man paths.
 manpath=( $HOME/.local/share/man /usr/{local,share,}/man )
@@ -36,8 +46,12 @@ export PAGER='less'
 
 
 # Python
+# Pointed at in place rather than stowed: each tool looks in a different
+# directory on macOS and on Linux, and these variables work on both. A
+# project's own pylintrc or matplotlibrc still takes precedence.
 export PYTHONSTARTUP="$HOME/.files/python/.pythonrc"
-export PYTHONPATH="$HOME/.local/lib/python/"
+export PYLINTRC="$HOME/.files/python/.pylintrc"
+export MATPLOTLIBRC="$HOME/.files/python/.config/matplotlib/matplotlibrc"
 export PYLINTHOME="$TMPDIR/pylint.d"
 
 
@@ -68,8 +82,12 @@ then
   [[ -d $BREW_PREFIX/opt/coreutils/libexec/gnubin ]] \
     && path=( $BREW_PREFIX/opt/coreutils/libexec/gnubin $path )
 else
-  export BREW_PREFIX="$HOME/.linuxbrew"
-  [[ -d $HOME/.linuxbrew ]] && path=( $HOME/.linuxbrew/bin $path )
+  # Linuxbrew's default prefix, then the old per-user one.
+  for BREW_PREFIX in /home/linuxbrew/.linuxbrew $HOME/.linuxbrew; do
+    [[ -d $BREW_PREFIX/bin ]] && break
+  done
+  export BREW_PREFIX
+  [[ -d $BREW_PREFIX/bin ]] && path+=( $BREW_PREFIX/bin )
 fi  # [[ "$OSTYPE" == darwin* ]]
 
 

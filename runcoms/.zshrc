@@ -23,6 +23,12 @@ for keymap in 'vicmd' 'afu-vicmd'; do
   bindkey -M ${keymap} '\-' vi-beginning-of-line &>/dev/null
   bindkey -M ${keymap} '0' vi-end-of-line &>/dev/null; done;
 
+# Python
+# The ptpython command reads its config from a per-OS directory; point it at
+# the one .pythonrc uses, with the same history, so both behave alike.
+alias ptpython="ptpython --config-file ~/.files/python/.ptpython/config.py \
+--history-file \${XDG_STATE_HOME:-\$HOME/.local/state}/ptpython/history"
+
 # Source machine local options
 source "${ZDOTDIR}"/.zshrc-local 2>/dev/null
 

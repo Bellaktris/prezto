@@ -25,7 +25,7 @@ export FBTERM_BACKGROUND_IMAGE=1
 local _background="$_backgrounds"
 
 [[ -d "$_backgrounds" ]] && { files=( ~/.fbterm/*.(png|jpg) );
-   _background="$(python -c "import random; A=['${(j:', ':)files}']; print(random.choice(A))")" }
+   _background=${files[RANDOM % $#files + 1]} }
 
 unset _backgrounds; printf '\e[?25l';
 
