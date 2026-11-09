@@ -1,10 +1,12 @@
 #!/usr/bin/env zsh
 #
-# Every 20 seconds sweeps a bright band right to left across the [session]
-# label on the left of the status line, like Claude Code's shimmer over
-# "Thinking...".
-# status-left shows @glow while it is set; between sweeps it is unset and the
-# plain label is back. One instance per server, its pid kept in @glow_pid.
+# Every 20 seconds sweeps a bright band right to left across the current
+# window's [n name] label and on through the [session] label, like Claude
+# Code's shimmer over "Thinking...". While a sweep runs, status-left shows the
+# session's @glow and the current window's label its @glow_label (a name of
+# its own, else status-left would find the window's first); in between both
+# are unset and the plain labels are back. One instance per server, its pid
+# kept in @glow_pid.
 
 zmodload zsh/zselect zsh/mathfunc
 
@@ -12,15 +14,18 @@ local pid=$(tmux show -gv @glow_pid 2>/dev/null)
 [[ -n $pid ]] && kill -0 $pid 2>/dev/null && exit 0
 tmux set -g @glow_pid $$
 
-# status-style's colour136 at rest, rising to a pale gold at the band's peak.
-local -a base=(175 135 0) peak=(255 240 190)
+# Each label rises from its own colour at rest - status-style's colour136,
+# window-status-current-style's colour166 - to a pale gold at the band's peak.
+local -a session_rgb=(175 135 0) window_rgb=(215 95 0) peak=(255 240 190)
 local -F width=2.5    # half-width of the band, in characters
-local tick=7          # hundredths of a second per frame
+local tick=5          # hundredths of a second per frame
 
+# glow-frame <label> <band position> <label's column> <r> <g> <b>
 function glow-frame {
   local label=$1 out= c
   local -F pos=$2 d w
-  local -i i=0 r g b
+  local -i i=$3 r g b
+  local -a base=($4 $5 $6)
   for c in ${(s::)label}; do
     d=$(( abs(i - pos) / width )); w=$(( d < 1 ? (cos(d * 3.14159) + 1) / 2 : 0 ))
     r=$(( base[1] + (peak[1] - base[1]) * w ))
@@ -30,7 +35,7 @@ function glow-frame {
     out+="#[fg=$(printf '#%02x%02x%02x' $r $g $b)]$c"
     (( i++ ))
   done
-  print -rn -- "$out#[default] "
+  print -rn -- "$out#[default]"
 }
 
 function glow-refresh {
@@ -48,16 +53,41 @@ while tmux has-session 2>/dev/null; do
     | sed -n 's/^[1-9][0-9]* //p')"})
   (( $#sessions )) || continue
 
-  local -i longest=0 step
-  local s
-  for s in $sessions; do (( $#s + 2 > longest )) && longest=$(( $#s + 2 )); done
-  for (( step = longest + 3; step >= -3; step-- )); do
+  # Where each session's current window label sits: past the session label
+  # and, for each window before it, its label with the spaces around it and
+  # the one-space separator (window-status-format in tmux-options.zsh).
+  local marks='#{?window_zoomed_flag, ⤢,}#{?window_bell_flag, !,}'
+  local -A window_id window_label window_col
+  local -i last=0 col step max_left=$(tmux show -gv status-left-length)
+  local s line
+  for s in $sessions; do
+    (( col = ${(m)#${:-[$s] }} ))
+    (( col > max_left )) && col=max_left
+    for line in ${(f)"$(tmux list-windows -t "=$s:" \
+        -F "#{window_active}#{window_id} [#I #W$marks]")"}; do
+      if [[ $line == 1* ]]; then
+        window_id[$s]=${${line#1}%% *} window_label[$s]=${line#* }
+        break
+      fi
+      (( col += ${(m)#${line#* }} + 1 ))
+    done
+    window_col[$s]=$col
+    (( col + ${(m)#window_label[$s]} > last )) && last=$(( col + ${(m)#window_label[$s]} ))
+  done
+
+  for (( step = last + 3; step >= -3; step-- )); do
     for s in $sessions; do
-      tmux set -t "=$s:" @glow "$(glow-frame "[$s]" $step)" 2>/dev/null
+      tmux set -t "=$s:" @glow \
+        "$(glow-frame "[$s]" $step 0 $session_rgb) " 2>/dev/null
+      tmux set -w -t $window_id[$s] @glow_label \
+        "$(glow-frame $window_label[$s] $step $window_col[$s] $window_rgb)" 2>/dev/null
     done
     glow-refresh
     zselect -t $tick
   done
-  for s in $sessions; do tmux set -u -t "=$s:" @glow 2>/dev/null; done
+  for s in $sessions; do
+    tmux set -u -t "=$s:" @glow 2>/dev/null
+    tmux set -u -w -t $window_id[$s] @glow_label 2>/dev/null
+  done
   glow-refresh
 done

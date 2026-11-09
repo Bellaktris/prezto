@@ -120,9 +120,20 @@ tmux set status-right "#(${${(%):-%N}:h}/tmux-status.sh)  "
 
 tmux set-option -g status-style bg=default,fg=colour136
 
-# Every 20 seconds a glow sweeps across the session label - see tmux-glow.zsh.
+# Every 20 seconds a glow sweeps across the current window and session labels
+# - see tmux-glow.zsh.
 tmux set status-left '#{?@glow,#{@glow},[#{session_name}] }'
 tmux run-shell -b "${${(%):-%N}:h}/tmux-glow.zsh"
 
 tmux set-window-option -g window-status-style fg=colour244,bg=default
 tmux set-window-option -g window-status-current-style fg=colour166,bg=default
+
+# Brackets around the current window instead of the * and - flags, spaces
+# around the others so the list does not shift as you switch. Zoom and bell
+# get their own marks; the previous window is dimmed.
+local window_marks='#{?window_zoomed_flag, ⤢,}#{?window_bell_flag, !,}'
+tmux set-window-option -g window-status-format \
+  "#{?window_last_flag,#[dim],} #I #W$window_marks "
+tmux set-window-option -g window-status-current-format \
+  "#{?@glow_label,#{@glow_label},[#I #W$window_marks]}"
+unset window_marks
