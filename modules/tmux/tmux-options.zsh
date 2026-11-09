@@ -142,12 +142,17 @@ tmux run-shell -b "${${(%):-%N}:h}/tmux-glow.zsh"
 tmux set-window-option -g window-status-style fg=colour244,bg=default
 tmux set-window-option -g window-status-current-style fg=colour166,bg=default
 
-# Brackets around the current window instead of the * and - flags, spaces
-# around the others so the list does not shift as you switch. Zoom and bell
-# get their own marks; the previous window is dimmed.
-local window_marks='#{?window_zoomed_flag, ⤢,}#{?window_bell_flag, !,}'
+# Brackets around the current window instead of the * and - flags, and one
+# space between labels; the list shifts by the brackets' width as you switch,
+# which padding the others would avoid at the cost of uneven gaps. The number
+# follows the name as a subscript (zsh₂), digit by digit, in @window_number so
+# that tmux-glow.zsh builds the same label. Zoom and bell get their own marks;
+# the previous window is dimmed.
+tmux set -g @window_number \
+  '#{s/0/₀/;s/1/₁/;s/2/₂/;s/3/₃/;s/4/₄/;s/5/₅/;s/6/₆/;s/7/₇/;s/8/₈/;s/9/₉/:window_index}'
+local window_label='#W#{E:@window_number}#{?window_zoomed_flag, ⤢,}#{?window_bell_flag, !,}'
 tmux set-window-option -g window-status-format \
-  "#{?window_last_flag,#[dim],} #I #W$window_marks "
+  "#{?window_last_flag,#[dim],}$window_label"
 tmux set-window-option -g window-status-current-format \
-  "#{?@glow_label,#{@glow_label},[#I #W$window_marks]}"
-unset window_marks
+  "#{?@glow_label,#{@glow_label},[$window_label]}"
+unset window_label

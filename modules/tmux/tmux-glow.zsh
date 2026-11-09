@@ -54,8 +54,9 @@ while tmux has-session 2>/dev/null; do
   (( $#sessions )) || continue
 
   # Where each session's current window label sits: past the session label
-  # and, for each window before it, its label with the spaces around it and
-  # the one-space separator (window-status-format in tmux-options.zsh).
+  # and, for each window before it, its label - the bracketed form, less the
+  # brackets the other windows do not have - and the one-space separator
+  # (window-status-format in tmux-options.zsh).
   local marks='#{?window_zoomed_flag, ⤢,}#{?window_bell_flag, !,}'
   local -A window_id window_label window_col
   local -i last=0 col step max_left=$(tmux show -gv status-left-length)
@@ -64,12 +65,12 @@ while tmux has-session 2>/dev/null; do
     (( col = ${(m)#${:-[$s] }} ))
     (( col > max_left )) && col=max_left
     for line in ${(f)"$(tmux list-windows -t "=$s:" \
-        -F "#{window_active}#{window_id} [#I #W$marks]")"}; do
+        -F "#{window_active}#{window_id} [#W#{E:@window_number}$marks]")"}; do
       if [[ $line == 1* ]]; then
         window_id[$s]=${${line#1}%% *} window_label[$s]=${line#* }
         break
       fi
-      (( col += ${(m)#${line#* }} + 1 ))
+      (( col += ${(m)#${line#* }} - 2 + 1 ))
     done
     window_col[$s]=$col
     (( col + ${(m)#window_label[$s]} > last )) && last=$(( col + ${(m)#window_label[$s]} ))
