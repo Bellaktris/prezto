@@ -5,7 +5,7 @@ tmux set -g default-terminal "tmux-256color"
 
 tmux set destroy-unattached off
 
-tmux set -g history-limit 5000
+tmux set -g history-limit 50000
 
 tmux set default-shell $SHELL
 
@@ -84,13 +84,20 @@ if [[ "$mode" == (vi|) ]]; then
   tmux bind o  if-shell "${(j: | :)is_ssh} || ${(j: | :)is_ssh_like}" \
     "send-prefix; send-keys o" "resize-pane -Z"
 
+  # Claude Code in its fullscreen renderer draws on the alternate screen, so
+  # copy mode would only see the current screen; its own transcript view
+  # (ctrl+o) scrolls the whole conversation with vi keys, and 'v' there opens
+  # it in the editor. Pressed again over the transcript, copy mode after all -
+  # see claude-scroll.sh.
+  local claude_scroll="${${(%):-%N}:h}/claude-scroll.sh"
   tmux bind \[ if-shell "${(j: | :)is_ssh} || ${(j: | :)is_ssh_like}" \
-    "send-prefix; send-keys [" "copy-mode -e"
+    "send-prefix; send-keys [" \
+    "if-shell -F '#{&&:#{==:#{pane_current_command},claude},#{alternate_on}}' 'run-shell \"$claude_scroll #{pane_id}\"' 'copy-mode -e'"
 
   tmux bind \] if-shell "${(j: | :)is_ssh} || ${(j: | :)is_ssh_like}" \
     "send-prefix; send-keys ]" "paste-buffer -p"
 
-  unset is_{ssh,ssh_like,vim}
+  unset is_{ssh,ssh_like,vim} claude_scroll
 fi
 
 #Yank
