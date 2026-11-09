@@ -114,7 +114,9 @@ tmux set-window-option -g automatic-rename
 tmux set status-right-length 140
 { tmux set base-index 1; tmux movew; }
 
-tmux set status-right "#(${${(%):-%N}:h}/tmux-status.sh)"
+# Two blank columns after it, as Claude Code leaves at the end of its own
+# status line.
+tmux set status-right "#(${${(%):-%N}:h}/tmux-status.sh)  "
 
 tmux set-option -g status-style bg=default,fg=colour136
 
