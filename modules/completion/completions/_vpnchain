@@ -22,6 +22,7 @@ _vpnchain_commands () {
 		'get-blocklist:fetch the tracker lists and the kept-out country lists'
 		'subscribe:fetch the node list from the subscription'
 		'reload:regenerate the config and restart sing-box alone'
+		'home:whether this machine is behind the home router, where the exit is reached over the LAN'
 		'setup:one-time preparation (Linux: the browser policy file, with sudo)'
 		'ssh-reality:a shell on your own node, carried inside its Reality inbound'
 	)
@@ -91,6 +92,15 @@ case $state in
 					'status:whether it is running, listening, and how many routers it knows'
 				)
 				_describe -t subcommands 'i2p command' sub && ret=0
+				;;
+
+			(home)
+				(( CURRENT == 2 )) || return ret
+				# 'test' is the pilot's, and says nothing; not offered.
+				local -a sub=(
+					'learn:record the current gateway as the home router'
+				)
+				_describe -t subcommands 'home command' sub && ret=0
 				;;
 
 			(config)
