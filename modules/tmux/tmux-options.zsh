@@ -120,5 +120,9 @@ tmux set status-right "#(${${(%):-%N}:h}/tmux-status.sh)  "
 
 tmux set-option -g status-style bg=default,fg=colour136
 
+# Every 20 seconds a glow sweeps across the session label - see tmux-glow.zsh.
+tmux set status-left '#{?@glow,#{@glow},[#{session_name}] }'
+tmux run-shell -b "${${(%):-%N}:h}/tmux-glow.zsh"
+
 tmux set-window-option -g window-status-style fg=colour244,bg=default
 tmux set-window-option -g window-status-current-style fg=colour166,bg=default
