@@ -120,6 +120,20 @@ tmux set status-right "#(${${(%):-%N}:h}/tmux-status.sh)  "
 
 tmux set-option -g status-style bg=default,fg=colour136
 
+# A second status row above the usual one, holding only a thin rule near the
+# bottom of its cells (⎽, horizontal scan line 9), in the pane borders'
+# colour. ─ sits mid-cell and ▁ is thick. Monaco-UTF8 in fonts/ is patched
+# so the scan lines span the whole cell; with other fonts ⎽ may show gaps.
+# Left alone where init.zsh turned the status line off.
+# status-format is reset first so that sourcing this again does not copy the
+# rule into the second row.
+if [[ $(tmux show -v status) != off ]]; then
+  tmux set -gu status-format
+  tmux set -g 'status-format[1]' "$(tmux show -gv 'status-format[0]')"
+  tmux set -g 'status-format[0]' '#[fg=colour240]#{R:⎽,#{client_width}}'
+  tmux set status 2
+fi
+
 # Every 20 seconds a glow sweeps across the current window and session labels
 # - see tmux-glow.zsh.
 tmux set status-left '#{?@glow,#{@glow},[#{session_name}] }'

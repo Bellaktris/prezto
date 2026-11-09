@@ -48,7 +48,7 @@ function glow-refresh {
 while tmux has-session 2>/dev/null; do
   zselect -t 2000  # 20 seconds
 
-  [[ $(tmux show -gv status) == on ]] || continue
+  [[ $(tmux show -gv status) == off ]] && continue
   local -a sessions=(${(f)"$(tmux list-sessions -F '#{session_attached} #{session_name}' \
     | sed -n 's/^[1-9][0-9]* //p')"})
   (( $#sessions )) || continue
