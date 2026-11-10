@@ -115,8 +115,10 @@ tmux set status-right-length 140
 { tmux set base-index 1; tmux movew; }
 
 # Two blank columns after it, as Claude Code leaves at the end of its own
-# status line.
-tmux set status-right "#(${${(%):-%N}:h}/tmux-status.sh)  "
+# status line. A glow sweeps the readings every 30 seconds, on its own clock
+# - see tmux-glow-status.zsh.
+tmux set status-right "#{?@glow_status,#{@glow_status},#(${${(%):-%N}:h}/tmux-status.sh)}  "
+tmux run-shell -b "${${(%):-%N}:h}/tmux-glow-status.zsh"
 
 tmux set-option -g status-style bg=default,fg=colour136
 
