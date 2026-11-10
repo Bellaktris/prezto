@@ -15,9 +15,9 @@ local pid=$(tmux show -gv @glow_status_pid 2>/dev/null)
 tmux set -g @glow_status_pid $$
 
 # From the readings' colour at rest - bold cyan, which iTerm draws as its
-# bright cyan (ANSI 14) - to white at the band's peak.
-local -a base=(85 255 255) peak=(255 255 255)
-local -F width=2.5         # half-width of the band, in characters
+# bright cyan (ANSI 14) - to a pale gold at the band's peak.
+local -a base=(85 255 255) peak=(255 230 160)
+local -F width=4           # half-width of the band, in characters
 local tick=5               # hundredths of a second per frame
 local -F period=30 delay=13   # seconds
 
@@ -62,7 +62,7 @@ while tmux has-session 2>/dev/null; do
     for k in {1..$#parts}; do cols+=$col; (( col += ${(m)#parts[k]} + 3 )); done
     (( total = col - 3 ))
 
-    for (( step = total + 3; step >= -3; step-- )); do
+    for (( step = total + width + 1; step >= -width - 1; step-- )); do
       parts[-1]=$(strftime '%a %H:%M:%S' $EPOCHSECONDS)
       local frame=
       for k in {1..$#parts}; do
