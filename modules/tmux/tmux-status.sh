@@ -6,6 +6,24 @@ local plugins="${${(%):-%N}:h}/external"
 
 { local cmd=$HOME/.local/bin/tmux-mem-cpu-load
   local memcpu="$($cmd | cut -f 1 -d %)"
+
+  # macOS fills RAM on purpose (file cache, compressor), so used/total sits
+  # near total. Count the share the kernel calls under pressure instead
+  # (100 minus memorystatus_level, the free share), yellow/red at the
+  # warn/critical levels.
+  if [[ $OSTYPE == darwin* ]]; then
+    local -a vm=( $(sysctl -n hw.memsize kern.memorystatus_level \
+      kern.memorystatus_vm_pressure_level 2>/dev/null) )
+    local total=$(( vm[1] / 2**30 )) color mem
+    case $vm[3] in
+      2) color='#[fg=yellow,bright]' ;;
+      4) color='#[fg=red,bright]' ;;
+    esac
+    mem="${color}$(printf %.0f $(( total * (100 - vm[2]) / 100. )))/${total}GB"
+    [[ -n $color ]] && mem+='#[fg=cyan,bright]'
+    memcpu="$mem$sep${${memcpu#* }##[[:space:]]#}"
+  fi
+
   memcpu="${${memcpu//|/▪}/\//∕}"
   tmuxstatus+=("${memcpu//MB / MB$sep}" ) }
 
