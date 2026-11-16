@@ -9,6 +9,7 @@
 # kept in @glow_status_pid.
 
 zmodload zsh/zselect zsh/mathfunc zsh/datetime
+setopt extended_glob
 
 local pid=$(tmux show -gv @glow_status_pid 2>/dev/null)
 [[ -n $pid ]] && kill -0 $pid 2>/dev/null && exit 0
@@ -25,17 +26,30 @@ local status_sh="${${(%):-%N}:h}/tmux-status.sh"
 local value='#[fg=cyan,bright]' sep='#[fg=black] · '
 
 # glow-frame <text> <band position> <text's column>
+# A reading may carry its own colour (memory under pressure, in yellow or
+# red, then back to $value): its characters keep that colour and do not glow.
 function glow-frame {
-  local text=$1 out= c
+  local text=$1 out= c style=
   local -F pos=$2 d w
   local -i i=$3 r g b
-  for c in ${(s::)text}; do
-    d=$(( abs(i - pos) / width )); w=$(( d < 1 ? (cos(d * 3.14159) + 1) / 2 : 0 ))
-    r=$(( base[1] + (peak[1] - base[1]) * w ))
-    g=$(( base[2] + (peak[2] - base[2]) * w ))
-    b=$(( base[3] + (peak[3] - base[3]) * w ))
+  while [[ -n $text ]]; do
+    if [[ $text == '#['* ]]; then
+      c=${text%%\]*}]
+      text=${text[$#c+1,-1]}
+      [[ $c == "$value" ]] && style= || style=$c
+      continue
+    fi
+    c=${text[1]} text=${text[2,-1]}
     [[ $c == '#' ]] && c='##'
-    out+="#[bold,fg=$(printf '#%02x%02x%02x' $r $g $b)]$c"
+    if [[ -n $style ]]; then
+      out+="$style$c"
+    else
+      d=$(( abs(i - pos) / width )); w=$(( d < 1 ? (cos(d * 3.14159) + 1) / 2 : 0 ))
+      r=$(( base[1] + (peak[1] - base[1]) * w ))
+      g=$(( base[2] + (peak[2] - base[2]) * w ))
+      b=$(( base[3] + (peak[3] - base[3]) * w ))
+      out+="#[bold,fg=$(printf '#%02x%02x%02x' $r $g $b)]$c"
+    fi
     (( i++ ))
   done
   print -rn -- $out
@@ -59,7 +73,7 @@ while tmux has-session 2>/dev/null; do
     local split=$sep$value
     local -a parts=("${(@ps:$split:)${raw#$value}}")
     local -a cols=() ; local -i col=0 total step k
-    for k in {1..$#parts}; do cols+=$col; (( col += ${(m)#parts[k]} + 3 )); done
+    for k in {1..$#parts}; do cols+=$col; (( col += ${(m)#${parts[k]//\#\[[^\]]#\]}} + 3 )); done
     (( total = col - 3 ))
 
     for (( step = total + width + 1; step >= -width - 1; step-- )); do
