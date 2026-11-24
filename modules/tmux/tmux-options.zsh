@@ -109,7 +109,12 @@ tmux set pane-active-border-style fg=colour240
 
 # Tmux status line
 tmux set renumber-windows on
-tmux set-window-option -g automatic-rename
+# A bare flag option toggles, so the value is explicit. A window sitting at
+# its shell prompt is named - rather than zsh; anything running in it gives
+# its own name, as with the default format.
+tmux set-window-option -g automatic-rename on
+tmux set-window-option -g automatic-rename-format \
+  '#{?pane_in_mode,[tmux],#{?#{==:#{pane_current_command},zsh},-,#{pane_current_command}}}#{?pane_dead,[dead],}'
 
 tmux set status-right-length 140
 { tmux set base-index 1; tmux movew; }
